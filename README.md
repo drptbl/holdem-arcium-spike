@@ -36,7 +36,7 @@ The 17.1 s `deal` is the first computation after the cluster starts. The first h
 
 Both Arx nodes submit each callback. The second one fails with `alreadyCallbackedComputation` (`6204`), which is expected.
 
-`deal` is too big to store on-chain on devnet, about 28 SOL of rent. The compiled circuits sit in `circuits/` and the computation definitions point at their raw GitHub URLs. Arx nodes check each file against the hash compiled into the program.
+`deal` is too big to store on-chain on devnet, about 20 SOL of rent. The compiled circuits sit in `circuits/` and the computation definitions point at their raw GitHub URLs. Arx nodes check each file against the hash compiled into the program.
 
 ## Run it
 
