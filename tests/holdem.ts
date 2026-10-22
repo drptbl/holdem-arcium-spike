@@ -318,7 +318,7 @@ describe("Holdem benchmark", () => {
     fs.writeFileSync(
       file,
       JSON.stringify(
-        { clusterOffset, rpc: conn.rpcEndpoint, programId: program.programId.toBase58(), circuitInfo, report, samples },
+        { clusterOffset, rpcHost: new URL(conn.rpcEndpoint).host, programId: program.programId.toBase58(), circuitInfo, report, samples },
         null,
         2
       )
