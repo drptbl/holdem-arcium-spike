@@ -14,7 +14,19 @@ A hand is 5 MPC computations:
 
 Arcium `0.15.0`, Anchor `1.0.2`, Solana CLI `3.1.10`.
 
-Latency is measured by the client from sending the queue transaction to the callback landing. The SDK polls every 500 ms, so read it as ±0.5 s. Cost is what the payer is down after reclaiming the computation account rent with `claimComputationRent`: the queue and reclaim transaction fees plus Arcium's fee.
+Latency is measured by the client from sending the queue transaction to the callback landing. The SDK polls every 500 ms, so read it as ±0.5 s. Slots count from the queue transaction to the callback. Cost is what the payer is down after reclaiming the computation account rent with `claimComputationRent`: the queue and reclaim transaction fees plus Arcium's fee.
+
+Devnet, cluster offset `456` with 2 Arx nodes, Helius RPC, 10 hands on 2026-10-22:
+
+| step | median | max | slots (median) | net cost |
+| --- | --- | --- | --- | --- |
+| `deal` | 4.5 s | 4.6 s | 12.5 | 22,032 lamports |
+| flop | 4.0 s | 5.0 s | 10 | 20,164 lamports |
+| turn | 3.8 s | 4.4 s | 10 | 20,164 lamports |
+| river | 3.8 s | 3.8 s | 10 | 20,164 lamports |
+| showdown | 3.8 s | 4.4 s | 10 | 20,127 lamports |
+
+A hand that goes to showdown waits about 20 s on MPC and costs 102,651 lamports. Each computation is 5,000 for the queue transaction, 5,000 for the reclaim, Arcium's base fee and 10,000 more. The base fee is weight × 1 micro-lamport: 2,032 for `deal`, 164 and 127 for the reveals. The 10,000 matches the callback reserve, which Arcium's docs say scales with the node count. I couldn't confirm the per-node amount. The first hand also pays a one-time rent for Arcium's signer PDA.
 
 Localnet, 2 Arx nodes in Docker on an Apple Silicon laptop, 5 hands:
 
@@ -26,7 +38,7 @@ Localnet, 2 Arx nodes in Docker on an Apple Silicon laptop, 5 hands:
 | river | 3.6 s | 3.6 s | 5 | 20,032 lamports |
 | showdown | 3.6 s | 3.6 s | 5 | 19,968 lamports |
 
-The 17.1 s `deal` is the first computation after the cluster starts. The first hand also pays a one-time rent for Arcium's signer PDA. Localnet prices compute at 0, so these costs are transaction fees only.
+The 17.1 s `deal` is the first computation after the local cluster starts. Localnet prices compute at 0, so these costs leave out Arcium's base fee.
 
 | circuit | compiled size | weight (`cuAmount`) |
 | --- | --- | --- |
@@ -48,9 +60,12 @@ arcium test
 
 `arcium test` runs on localnet and needs Docker. `HANDS` sets how many hands to play (default 3). Results go to `bench/results/`.
 
-For devnet, deploy to cluster offset `456` and pass the circuit URLs:
+For devnet you need about 7 SOL and a dedicated RPC. The public devnet RPC rate-limits the program upload with `429 Too Many Requests`. Deploy the program, initialise the MXE on cluster offset `456`, then run the bench with the circuit URLs:
 
 ```bash
-arcium deploy --cluster-offset 456 --recovery-set-size 4 --keypair-path <payer.json> --rpc-url <devnet rpc>
-CIRCUIT_BASE_URL=https://raw.githubusercontent.com/drptbl/holdem-arcium-spike/<commit>/circuits HANDS=10 arcium test --cluster devnet
+solana program deploy target/deploy/holdem.so --program-id target/deploy/holdem-keypair.json --buffer <buffer.json> -k <payer.json> --url <devnet rpc> --use-rpc
+arcium deploy --skip-deploy --cluster-offset 456 --recovery-set-size 4 --keypair-path <payer.json> --program-keypair target/deploy/holdem-keypair.json --program-name holdem --rpc-url <devnet rpc>
+ANCHOR_PROVIDER_URL=<devnet rpc> ANCHOR_WALLET=<payer.json> ARCIUM_CLUSTER_OFFSET=456 CIRCUIT_BASE_URL=https://raw.githubusercontent.com/drptbl/holdem-arcium-spike/08b2a012eca9bb5879acda3da1bb694359b28a3b/circuits HANDS=10 pnpm bench
 ```
+
+Passing your own `--buffer` keypair lets you rerun the upload and resume it if it fails halfway.
