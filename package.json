@@ -4,7 +4,7 @@
   "license": "ISC",
   "packageManager": "pnpm@12.4.1",
   "scripts": {
-    "bench": "ts-mocha -p ./tsconfig.json -t 3600000 tests/holdem.ts"
+    "bench": "ts-mocha --exit -p ./tsconfig.json -t 3600000 tests/holdem.ts"
   },
   "dependencies": {
     "@anchor-lang/core": "1.0.2",

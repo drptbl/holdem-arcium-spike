@@ -16,7 +16,7 @@ cluster = "localnet"
 wallet = "../keys/devnet-payer.json"
 
 [scripts]
-test = "pnpm exec ts-mocha -p ./tsconfig.json -t 3600000 \"tests/**/*.ts\""
+test = "pnpm exec ts-mocha --exit -p ./tsconfig.json -t 3600000 \"tests/**/*.ts\""
 
 [hooks]
 
