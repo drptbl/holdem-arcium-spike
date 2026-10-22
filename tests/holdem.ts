@@ -410,8 +410,9 @@ describe("Holdem benchmark", () => {
 async function getMXEPublicKeyWithRetry(
   provider: anchor.AnchorProvider,
   programId: PublicKey,
-  maxRetries: number = 20,
-  retryDelayMs: number = 500
+  // MXE keygen on a public cluster can take a while after `arcium deploy`.
+  maxRetries: number = 120,
+  retryDelayMs: number = 1000
 ): Promise<Uint8Array> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
