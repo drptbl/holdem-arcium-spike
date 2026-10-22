@@ -1,66 +1,56 @@
-# Blackjack — hidden game state
+# holdem-arcium-spike
 
-A single-player blackjack game where the shuffled deck and the dealer's hole card exist only as ciphertext.
-MPC nodes shuffle and deal inside the computation; the player decrypts only their own hand and the dealer's
-face-up card, and no server, node, or chain observer can peek at undealt cards.
+Throwaway heads-up Texas Hold'em on [Arcium](https://arcium.com), built to measure how long each MPC step takes and what it costs. Forked from the `blackjack` example in https://github.com/arcium-hq/examples at `fe15384`.
 
-**Use this pattern when** encrypted state must persist on-chain across many turns with rule-driven selective
-reveals: card games, fog-of-war strategy, any turn-based game with private state.
+Every hand checks down to showdown. There is no betting, no chips, no timeouts and no refunds, so don't use it for anything real.
 
-## How it works
+A hand is 5 MPC computations:
 
-1. `initialize_blackjack_game` creates the `BlackjackGame` PDA and queues `shuffle_and_deal_cards`, which
-   shuffles a 52-card deck with `ArcisRNG::shuffle` and deals two cards each: deck and dealer hand return as
-   `Enc<Mxe, ...>` (not decryptable by any single party), player hand and dealer face-up card as `Enc<Shared, ...>`
-   (decryptable only by the player).
-2. The callback stores every ciphertext in `BlackjackGame` and emits `CardsShuffledAndDealtEvent`; the
-   player decrypts their hand client-side.
-3. `player_hit` and `player_double_down` feed the stored deck and hand ciphertexts back into MPC by byte
-   offset (`ArgBuilder`), draw the next card, and reveal only a bust boolean. `player_stand` ends the turn.
-4. `dealer_play` draws against the encrypted deck inside MPC until reaching 17, then returns the dealer hand
-   re-encrypted to both the MXE and the player.
-5. `resolve_game` compares both hands inside MPC and reveals a single result code.
+1. `deal` shuffles the deck inside MPC, keeps it encrypted to the MXE and gives each player their two hole cards encrypted to their own x25519 key.
+2. `reveal_board` reveals the flop, then the turn, then the river.
+3. `showdown_reveal` reveals both hands. The program ranks them on-chain in plain Rust (`score_seven`).
 
-Everyone sees hand sizes, `GameState` transitions, bust flags, and the final winner; only the player sees
-card values; nobody ever sees the undealt deck.
+## Results
 
-## Concepts demonstrated
+Arcium `0.15.0`, Anchor `1.0.2`, Solana CLI `3.1.10`.
 
-- Packed encrypted state: `Pack<[u8; 52]>` fits the whole deck into two ciphertexts. Size math is in the
-  module header of `programs/blackjack/src/lib.rs`; see
-  [Data packing](https://docs.arcium.com/developers/arcis/primitives#data-packing).
-- Reading encrypted account state back into computations: each action passes stored ciphertexts via
-  `ArgBuilder` account references instead of re-uploading them.
-- A multi-computation state machine: `GameState` gates which of the six circuits may run.
-- [`ArcisRNG::shuffle`](https://docs.arcium.com/developers/arcis/primitives#shuffling): unbiased deck order
-  no party can predict.
+Latency is measured by the client from sending the queue transaction to the callback landing. The SDK polls every 500 ms, so read it as ±0.5 s. Cost is what the payer is down after reclaiming the computation account rent with `claimComputationRent`: the queue and reclaim transaction fees plus Arcium's fee.
 
-## Run
+Localnet, 2 Arx nodes in Docker on an Apple Silicon laptop, 5 hands:
+
+| step | median | max | slots (median) | net cost |
+| --- | --- | --- | --- | --- |
+| `deal` | 4.0 s | 17.1 s | 6 | 19,984 lamports |
+| flop | 3.6 s | 3.6 s | 5 | 19,968 lamports |
+| turn | 3.6 s | 3.6 s | 5 | 20,032 lamports |
+| river | 3.6 s | 3.6 s | 5 | 20,032 lamports |
+| showdown | 3.6 s | 3.6 s | 5 | 19,968 lamports |
+
+The 17.1 s `deal` is the first computation after the cluster starts. The first hand also pays a one-time rent for Arcium's signer PDA. Localnet prices compute at 0, so these costs are transaction fees only.
+
+| circuit | compiled size | weight (`cuAmount`) |
+| --- | --- | --- |
+| `deal` | 4.0 MB | 2,032,530,414 |
+| `reveal_board` | 236 KB | 164,577,984 |
+| `showdown_reveal` | 84 KB | 127,371,896 |
+
+Both Arx nodes submit each callback. The second one fails with `alreadyCallbackedComputation` (`6204`), which is expected.
+
+`deal` is too big to store on-chain on devnet, about 28 SOL of rent. The compiled circuits sit in `circuits/` and the computation definitions point at their raw GitHub URLs. Arx nodes check each file against the hash compiled into the program.
+
+## Run it
 
 ```bash
-yarn install && arcium build && arcium test
+pnpm install
+arcium build
+arcium test
 ```
 
-Setup and troubleshooting: [repo README](../README.md#running-an-example).
+`arcium test` runs on localnet and needs Docker. `HANDS` sets how many hands to play (default 3). Results go to `bench/results/`.
 
-## Key files
+For devnet, deploy to cluster offset `456` and pass the circuit URLs:
 
-- `encrypted-ixs/src/lib.rs` — note how one circuit returns both `Enc<Mxe, ...>` and `Enc<Shared, ...>` outputs.
-- `programs/blackjack/src/lib.rs` — note how actions rebuild circuit inputs from stored ciphertexts by byte offset.
-- `tests/blackjack.ts` — note how `unpackHand` shifts cards out of a decrypted field element to read a `Pack`'d hand.
-
-## Pitfalls
-
-- `ArgBuilder` argument order and byte offsets must match the circuit signature and the `BlackjackGame`
-  field layout exactly; offsets count from the 8-byte discriminator (deck 8, player hand 72, dealer 104).
-- `InvalidGameState`: each action checks the state machine; `dealer_play` before a stand or bust is rejected.
-- `InvalidMove`: hitting after standing, or growing a hand past the 11-card `Hand` capacity.
-
-## Limitations
-
-- Hand sizes, bust flags, and the winner are public: observers see exactly when the player busts.
-- The dealer's face-up card is encrypted to the player rather than published, unlike real blackjack.
-- Actions must finalize sequentially: their nonces and hand sizes are fixed when queueing while account ciphertexts are fetched during computation, so overlapping actions can use incompatible state versions or overwrite an update.
-- No bets, splits, insurance, or multiplayer, and no timeout path for abandoned games.
-
-See also: [Arcis best practices](https://docs.arcium.com/developers/arcis/best-practices) · **Next:** [Ed25519](../ed25519/)
+```bash
+arcium deploy --cluster-offset 456 --recovery-set-size 4 --keypair-path <payer.json> --rpc-url <devnet rpc>
+CIRCUIT_BASE_URL=https://raw.githubusercontent.com/drptbl/holdem-arcium-spike/<commit>/circuits HANDS=10 arcium test --cluster devnet
+```
