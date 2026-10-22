@@ -25,6 +25,7 @@ anchor-lang = { version = "1.0.2", features = ["init-if-needed"] }
 arcium-client = { default-features = false, version = "=0.15.0" }
 arcium-macros = "=0.15.0"
 arcium-anchor = "=0.15.0"
+sha3 = { version = "=0.10.8", default-features = false }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

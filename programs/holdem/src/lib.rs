@@ -6,13 +6,21 @@
 //! discriminator: deck at offset 8 (2 x 32-byte ciphertexts, since `Pack<[u8; 52]>`
 //! packs 26 bytes per field element). Betting, chips, timeouts and refunds are out
 //! of scope: every hand checks down to showdown.
+//!
+//! Two modes: `new_hand` makes 5 MPC calls per hand (deal, flop, turn, river,
+//! showdown). `new_fast_hand` makes one (`deal_fast`); players then reveal each street
+//! and their hole cards with `post_reveal`, and `next_street` / `showdown` are the MPC
+//! fallback when a player does not post. The spike lets either player call the
+//! fallback at any time; a real table would gate it behind a timeout.
 
 use anchor_lang::prelude::*;
 use arcium_anchor::prelude::*;
 use arcium_client::idl::arcium::types::{CallbackAccount, CircuitSource, OffChainCircuitSource};
 use arcium_macros::circuit_hash;
+use sha3::{Digest, Sha3_256};
 
 const COMP_DEF_OFFSET_DEAL: u32 = comp_def_offset("deal");
+const COMP_DEF_OFFSET_DEAL_FAST: u32 = comp_def_offset("deal_fast");
 const COMP_DEF_OFFSET_REVEAL_BOARD: u32 = comp_def_offset("reveal_board");
 const COMP_DEF_OFFSET_SHOWDOWN_REVEAL: u32 = comp_def_offset("showdown_reveal");
 
@@ -73,15 +81,8 @@ pub mod holdem {
         p1_enc_pubkey: [u8; 32],
         p1_nonce: u128,
     ) -> Result<()> {
-        let hand = &mut ctx.accounts.hand;
-        hand.bump = ctx.bumps.hand;
-        hand.hand_id = hand_id;
-        hand.players = [ctx.accounts.payer.key(), opponent];
-        hand.stage = Stage::Dealing;
-        hand.pending = true;
-        hand.board = [NO_CARD; 5];
-        hand.hole_cards = [NO_CARD; 4];
-        hand.winner = NO_CARD;
+        let payer = ctx.accounts.payer.key();
+        ctx.accounts.hand.start(ctx.bumps.hand, hand_id, [payer, opponent], false);
 
         // One pubkey/nonce pair per `Shared` parameter of `deal`, in order.
         let args = ArgBuilder::new()
@@ -201,20 +202,9 @@ pub mod holdem {
         };
 
         let hand = &mut ctx.accounts.hand;
-        let (first_slot, count, next) = match hand.stage {
-            Stage::Preflop => (0, 3, Stage::Flop),
-            Stage::Flop => (3, 1, Stage::Turn),
-            Stage::Turn => (4, 1, Stage::River),
-            _ => return Err(ErrorCode::InvalidStage.into()),
-        };
-        hand.board[first_slot..first_slot + count].copy_from_slice(&cards[..count]);
-        hand.stage = next;
-        hand.pending = false;
-
-        emit!(BoardRevealedEvent {
-            hand_id: hand.hand_id,
-            board: hand.board,
-        });
+        let (first, count, next) = street_slots(hand.stage)?;
+        hand.board[first..first + count].copy_from_slice(&cards[..count]);
+        hand.finish_street(next);
         Ok(())
     }
 
@@ -264,35 +254,231 @@ pub mod holdem {
             Err(_) => return Err(ErrorCode::AbortedComputation.into()),
         };
 
-        let hand = &mut ctx.accounts.hand;
-        require!(hand.stage == Stage::River, ErrorCode::InvalidStage);
-        let b = hand.board;
-        let scores = [
-            score_seven(&[hole_cards[0], hole_cards[1], b[0], b[1], b[2], b[3], b[4]]),
-            score_seven(&[hole_cards[2], hole_cards[3], b[0], b[1], b[2], b[3], b[4]]),
-        ];
-        hand.hole_cards = hole_cards;
-        hand.scores = scores;
-        hand.winner = match scores[0].cmp(&scores[1]) {
-            std::cmp::Ordering::Greater => 0,
-            std::cmp::Ordering::Less => 1,
-            std::cmp::Ordering::Equal => 2,
+        ctx.accounts.hand.settle(hole_cards)
+    }
+
+    pub fn init_deal_fast_comp_def(ctx: Context<InitDealFastCompDef>, circuit_url: Option<String>) -> Result<()> {
+        init_computation_def(ctx.accounts, circuit_url.map(|url| off_chain(url, circuit_hash!("deal_fast"))))?;
+        Ok(())
+    }
+
+    /// Like `new_hand`, but queues `deal_fast`: the only MPC call a hand needs when
+    /// both players post their reveals. `next_street` and `showdown` remain as the
+    /// MPC fallback when a player does not post.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_fast_hand(
+        ctx: Context<NewFastHand>,
+        computation_offset: u64,
+        hand_id: u64,
+        opponent: Pubkey,
+        p0_enc_pubkey: [u8; 32],
+        p0_nonce: u128,
+        p1_enc_pubkey: [u8; 32],
+        p1_nonce: u128,
+    ) -> Result<()> {
+        let payer = ctx.accounts.payer.key();
+        ctx.accounts.hand.start(ctx.bumps.hand, hand_id, [payer, opponent], true);
+
+        let args = ArgBuilder::new()
+            .x25519_pubkey(p0_enc_pubkey)
+            .plaintext_u128(p0_nonce)
+            .x25519_pubkey(p1_enc_pubkey)
+            .plaintext_u128(p1_nonce)
+            .build();
+
+        ctx.accounts.sign_pda_account.bump = ctx.bumps.sign_pda_account;
+
+        queue_computation(
+            ctx.accounts,
+            computation_offset,
+            args,
+            vec![DealFastCallback::callback_ix(
+                computation_offset,
+                &ctx.accounts.mxe_account,
+                &[CallbackAccount {
+                    pubkey: ctx.accounts.hand.key(),
+                    is_writable: true,
+                }],
+            )?],
+            1,
+            0,
+            0,
+        )?;
+        Ok(())
+    }
+
+    /// Stores the encrypted deck, each seat's encrypted secrets, the masked board and
+    /// the commitments that posted reveals are checked against.
+    #[arcium_callback(encrypted_ix = "deal_fast")]
+    pub fn deal_fast_callback(
+        ctx: Context<DealFastCallback>,
+        output: SignedComputationOutputs<DealFastOutput>,
+    ) -> Result<()> {
+        let o = match output.verify_output(
+            &ctx.accounts.cluster_account,
+            &ctx.accounts.computation_account,
+        ) {
+            Ok(DealFastOutput { field_0 }) => field_0,
+            Err(_) => return Err(ErrorCode::AbortedComputation.into()),
         };
-        hand.stage = Stage::Complete;
+
+        let hand = &mut ctx.accounts.hand;
+        hand.deck = o.field_0.ciphertexts;
+        hand.deck_nonce = o.field_0.nonce;
+        hand.seat_ciphertexts = [o.field_1.ciphertexts, o.field_2.ciphertexts];
+        hand.seat_nonces = [o.field_1.nonce, o.field_2.nonce];
+        hand.masked_board = o.field_3;
+        hand.commitments = o.field_4;
+        hand.stage = Stage::Preflop;
         hand.pending = false;
 
-        emit!(ShowdownEvent {
-            hand_id: hand.hand_id,
-            hole_cards,
-            scores,
-            winner: hand.winner,
+        emit!(HandDealtEvent {
+            hand_id: hand.hand_id
         });
+        Ok(())
+    }
+
+    /// A player posts what the next reveal needs from them: their board shares for
+    /// the next street, or their hole cards at the river. The value must match the
+    /// commitment from `deal_fast`. Once both seats have posted, the street is
+    /// unmasked or the hand is settled, with no MPC call.
+    pub fn post_reveal(
+        ctx: Context<PostReveal>,
+        _hand_id: u64,
+        kind: u8,
+        payload: [u8; 3],
+        salt: [u8; 8],
+    ) -> Result<()> {
+        let hand = &mut ctx.accounts.hand;
+        require!(hand.fast, ErrorCode::NotFastHand);
+        require!(!hand.pending, ErrorCode::ComputationPending);
+        require!(kind == next_reveal_kind(hand.stage)?, ErrorCode::InvalidStage);
+        let seat = hand
+            .players
+            .iter()
+            .position(|p| *p == ctx.accounts.player.key())
+            .ok_or(ErrorCode::NotAuthorized)?;
+        require!(hand.posted[seat] & (1 << kind) == 0, ErrorCode::AlreadyPosted);
+        require!(
+            commitment(seat as u8, kind, payload, salt) == hand.commitments[4 * seat + kind as usize],
+            ErrorCode::CommitmentMismatch
+        );
+
+        hand.posted[seat] |= 1 << kind;
+        match kind {
+            HOLE_CARDS => hand.posted_holes[seat] = [payload[0], payload[1]],
+            _ => {
+                let (first, count, _) = street_slots(hand.stage)?;
+                hand.board_shares[seat][first..first + count].copy_from_slice(&payload[..count]);
+            }
+        }
+        if hand.posted[1 - seat] & (1 << kind) == 0 {
+            return Ok(());
+        }
+
+        if kind == HOLE_CARDS {
+            let [a, b] = hand.posted_holes;
+            return hand.settle([a[0], a[1], b[0], b[1]]);
+        }
+        let (first, count, next) = street_slots(hand.stage)?;
+        for slot in first..first + count {
+            hand.board[slot] = hand.masked_board[slot] ^ hand.board_shares[0][slot] ^ hand.board_shares[1][slot];
+        }
+        hand.finish_street(next);
         Ok(())
     }
 }
 
 fn off_chain(source: String, hash: [u8; 32]) -> CircuitSource {
     CircuitSource::OffChain(OffChainCircuitSource { source, hash })
+}
+
+/// `post_reveal` kind for hole cards; 1, 2 and 3 are the flop, turn and river shares.
+const HOLE_CARDS: u8 = 0;
+
+/// Board slots the next street fills, and the stage after it.
+fn street_slots(stage: Stage) -> Result<(usize, usize, Stage)> {
+    match stage {
+        Stage::Preflop => Ok((0, 3, Stage::Flop)),
+        Stage::Flop => Ok((3, 1, Stage::Turn)),
+        Stage::Turn => Ok((4, 1, Stage::River)),
+        _ => Err(ErrorCode::InvalidStage.into()),
+    }
+}
+
+/// The `post_reveal` kind a fast hand waits for at `stage`.
+fn next_reveal_kind(stage: Stage) -> Result<u8> {
+    match stage {
+        Stage::Preflop => Ok(1),
+        Stage::Flop => Ok(2),
+        Stage::Turn => Ok(3),
+        Stage::River => Ok(HOLE_CARDS),
+        _ => Err(ErrorCode::InvalidStage.into()),
+    }
+}
+
+/// Mirrors `commit` in the `deal_fast` circuit: SHA3-256 over
+/// [seat, kind, payload x3, salt x8], truncated to 16 bytes.
+fn commitment(seat: u8, kind: u8, payload: [u8; 3], salt: [u8; 8]) -> [u8; 16] {
+    let mut preimage = [0u8; 13];
+    preimage[0] = seat;
+    preimage[1] = kind;
+    preimage[2..5].copy_from_slice(&payload);
+    preimage[5..].copy_from_slice(&salt);
+    let digest = Sha3_256::digest(preimage);
+    let mut truncated = [0u8; 16];
+    truncated.copy_from_slice(&digest[..16]);
+    truncated
+}
+
+impl Hand {
+    fn start(&mut self, bump: u8, hand_id: u64, players: [Pubkey; 2], fast: bool) {
+        self.bump = bump;
+        self.hand_id = hand_id;
+        self.players = players;
+        self.fast = fast;
+        self.stage = Stage::Dealing;
+        self.pending = true;
+        self.board = [NO_CARD; 5];
+        self.hole_cards = [NO_CARD; 4];
+        self.winner = NO_CARD;
+    }
+
+    fn finish_street(&mut self, next: Stage) {
+        self.stage = next;
+        self.pending = false;
+        emit!(BoardRevealedEvent {
+            hand_id: self.hand_id,
+            board: self.board,
+        });
+    }
+
+    /// Ranks both hands against the board and completes the hand.
+    fn settle(&mut self, hole_cards: [u8; 4]) -> Result<()> {
+        require!(self.stage == Stage::River, ErrorCode::InvalidStage);
+        let b = self.board;
+        let scores = [
+            score_seven(&[hole_cards[0], hole_cards[1], b[0], b[1], b[2], b[3], b[4]]),
+            score_seven(&[hole_cards[2], hole_cards[3], b[0], b[1], b[2], b[3], b[4]]),
+        ];
+        self.hole_cards = hole_cards;
+        self.scores = scores;
+        self.winner = match scores[0].cmp(&scores[1]) {
+            std::cmp::Ordering::Greater => 0,
+            std::cmp::Ordering::Less => 1,
+            std::cmp::Ordering::Equal => 2,
+        };
+        self.stage = Stage::Complete;
+        self.pending = false;
+
+        emit!(ShowdownEvent {
+            hand_id: self.hand_id,
+            hole_cards,
+            scores,
+            winner: self.winner,
+        });
+        Ok(())
+    }
 }
 
 /// Ranks the best five-card hand among seven cards; a higher score wins.
@@ -718,6 +904,135 @@ pub struct InitShowdownRevealCompDef<'info> {
     pub system_program: Program<'info, System>,
 }
 
+#[queue_computation_accounts("deal_fast", payer)]
+#[derive(Accounts)]
+#[instruction(computation_offset: u64, hand_id: u64)]
+pub struct NewFastHand<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(
+        init_if_needed,
+        space = 9,
+        payer = payer,
+        seeds = [&SIGN_PDA_SEED],
+        bump,
+        address = derive_sign_pda!(),
+    )]
+    pub sign_pda_account: Account<'info, ArciumSignerAccount>,
+    #[account(
+        address = derive_mxe_pda!()
+    )]
+    pub mxe_account: Box<Account<'info, MXEAccount>>,
+    #[account(
+        mut,
+        address = derive_mempool_pda!(mxe_account)
+    )]
+    /// CHECK: mempool_account, checked by the arcium program.
+    pub mempool_account: UncheckedAccount<'info>,
+    #[account(
+        mut,
+        address = derive_execpool_pda!(mxe_account)
+    )]
+    /// CHECK: executing_pool, checked by the arcium program.
+    pub executing_pool: UncheckedAccount<'info>,
+    #[account(
+        mut,
+        address = derive_comp_pda!(computation_offset, mxe_account)
+    )]
+    /// CHECK: computation_account, checked by the arcium program.
+    pub computation_account: UncheckedAccount<'info>,
+    #[account(
+        address = derive_comp_def_pda!(COMP_DEF_OFFSET_DEAL_FAST)
+    )]
+    pub comp_def_account: Box<Account<'info, ComputationDefinitionAccount>>,
+    #[account(
+        mut,
+        address = derive_cluster_pda!(mxe_account)
+    )]
+    pub cluster_account: Box<Account<'info, Cluster>>,
+    #[account(
+        mut,
+        address = ARCIUM_FEE_POOL_ACCOUNT_ADDRESS,
+    )]
+    pub pool_account: Account<'info, FeePool>,
+    #[account(
+        mut,
+        address = ARCIUM_CLOCK_ACCOUNT_ADDRESS,
+    )]
+    pub clock_account: Account<'info, ClockAccount>,
+    pub system_program: Program<'info, System>,
+    pub arcium_program: Program<'info, Arcium>,
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + Hand::INIT_SPACE,
+        seeds = [b"hand".as_ref(), hand_id.to_le_bytes().as_ref()],
+        bump,
+    )]
+    pub hand: Account<'info, Hand>,
+}
+
+#[callback_accounts("deal_fast")]
+#[derive(Accounts)]
+pub struct DealFastCallback<'info> {
+    pub arcium_program: Program<'info, Arcium>,
+    #[account(
+        address = derive_comp_def_pda!(COMP_DEF_OFFSET_DEAL_FAST)
+    )]
+    pub comp_def_account: Box<Account<'info, ComputationDefinitionAccount>>,
+    #[account(
+        address = derive_mxe_pda!()
+    )]
+    pub mxe_account: Box<Account<'info, MXEAccount>>,
+    /// CHECK: computation_account, checked by arcium program via constraints in the callback context.
+    pub computation_account: UncheckedAccount<'info>,
+    #[account(
+        address = derive_cluster_pda!(mxe_account)
+    )]
+    pub cluster_account: Box<Account<'info, Cluster>>,
+    #[account(address = ::arcium_anchor::solana_instructions_sysvar::ID)]
+    /// CHECK: instructions_sysvar, checked by the account constraint
+    pub instructions_sysvar: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub hand: Account<'info, Hand>,
+}
+
+#[init_computation_definition_accounts("deal_fast", payer)]
+#[derive(Accounts)]
+pub struct InitDealFastCompDef<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(
+        mut,
+        address = derive_mxe_pda!()
+    )]
+    pub mxe_account: Box<Account<'info, MXEAccount>>,
+    #[account(mut)]
+    /// CHECK: comp_def_account, checked by arcium program.
+    /// Can't check it here as it's not initialized yet.
+    pub comp_def_account: UncheckedAccount<'info>,
+    #[account(mut, address = derive_mxe_lut_pda!(mxe_account.lut_offset_slot))]
+    /// CHECK: address_lookup_table, checked by arcium program.
+    pub address_lookup_table: UncheckedAccount<'info>,
+    #[account(address = LUT_PROGRAM_ID)]
+    /// CHECK: lut_program is the Address Lookup Table program.
+    pub lut_program: UncheckedAccount<'info>,
+    pub arcium_program: Program<'info, Arcium>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(_hand_id: u64)]
+pub struct PostReveal<'info> {
+    pub player: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [b"hand".as_ref(), _hand_id.to_le_bytes().as_ref()],
+        bump = hand.bump,
+    )]
+    pub hand: Box<Account<'info, Hand>>,
+}
+
 /// One heads-up hand. Ciphertext fields are fed back into circuits by byte
 /// offset, so `deck` must stay the first field (see `DECK_OFFSET`).
 #[account]
@@ -742,6 +1057,21 @@ pub struct Hand {
     /// 0 or 1 for the winning seat, 2 for a split pot, `NO_CARD` before showdown.
     pub winner: u8,
     pub bump: u8,
+    /// Dealt with `deal_fast`; the fields below are only used in that mode.
+    pub fast: bool,
+    /// Board cards XORed with both seats' shares; public from the deal.
+    pub masked_board: [u8; 5],
+    /// Truncated SHA3-256 commitments, indexed `4 * seat + kind`.
+    pub commitments: [[u8; 16]; 8],
+    /// Each seat's encrypted secrets (Pack<[u8; 39]>, 2 field elements).
+    pub seat_ciphertexts: [[[u8; 32]; 2]; 2],
+    pub seat_nonces: [u128; 2],
+    /// Per seat, bit `kind` is set once that seat has posted that kind.
+    pub posted: [u8; 2],
+    /// Board shares posted so far, per seat and board slot.
+    pub board_shares: [[u8; 5]; 2],
+    /// Hole cards posted at showdown, per seat.
+    pub posted_holes: [[u8; 2]; 2],
 }
 
 #[repr(u8)]
@@ -786,6 +1116,12 @@ pub enum ErrorCode {
     ClusterNotSet,
     #[msg("Not authorized to perform this action")]
     NotAuthorized,
+    #[msg("This hand was not dealt with deal_fast")]
+    NotFastHand,
+    #[msg("This seat already posted this reveal")]
+    AlreadyPosted,
+    #[msg("Posted value does not match the dealt commitment")]
+    CommitmentMismatch,
 }
 
 #[cfg(test)]
