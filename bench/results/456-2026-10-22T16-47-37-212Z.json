@@ -1,0 +1,1837 @@
+{
+  "clusterOffset": 456,
+  "rpcHost": "devnet.helius-rpc.com",
+  "programId": "58WSqBPM7wYJTkJg9rC9215yagvXQRphMctZoA6WUC8v",
+  "circuitInfo": {
+    "clusterCuPriceMicroLamports": "1",
+    "deal": {
+      "cuAmount": "2032530414",
+      "circuitBytes": 3965639
+    },
+    "reveal_board": {
+      "cuAmount": "164577984",
+      "circuitBytes": 235796
+    },
+    "showdown_reveal": {
+      "cuAmount": "127371896",
+      "circuitBytes": 83839
+    }
+  },
+  "report": [
+    {
+      "step": "deal",
+      "n": 10,
+      "p50_ms": 4545,
+      "p90_ms": 4624,
+      "max_ms": 4624,
+      "p50_slots": 13,
+      "failed_callback_txs": 9,
+      "mean_send_ms": 1397,
+      "mean_payer_settled_lamports": 5446028,
+      "mean_net_cost_lamports": 91628,
+      "mean_queue_tx_fee_lamports": 5000,
+      "arcium_base_fee_lamports": "2032",
+      "mean_callback_cu": 135755
+    },
+    {
+      "step": "flop",
+      "n": 10,
+      "p50_ms": 3986,
+      "p90_ms": 5035,
+      "max_ms": 5035,
+      "p50_slots": 10,
+      "failed_callback_txs": 10,
+      "mean_send_ms": 1463,
+      "mean_payer_settled_lamports": 3113964,
+      "mean_net_cost_lamports": 20164,
+      "mean_queue_tx_fee_lamports": 5000,
+      "arcium_base_fee_lamports": "164",
+      "mean_callback_cu": 134655
+    },
+    {
+      "step": "turn",
+      "n": 10,
+      "p50_ms": 3782,
+      "p90_ms": 4387,
+      "max_ms": 4387,
+      "p50_slots": 10,
+      "failed_callback_txs": 10,
+      "mean_send_ms": 2357,
+      "mean_payer_settled_lamports": 3113964,
+      "mean_net_cost_lamports": 20164,
+      "mean_queue_tx_fee_lamports": 5000,
+      "arcium_base_fee_lamports": "164",
+      "mean_callback_cu": 135755
+    },
+    {
+      "step": "river",
+      "n": 10,
+      "p50_ms": 3764,
+      "p90_ms": 3804,
+      "max_ms": 3804,
+      "p50_slots": 10,
+      "failed_callback_txs": 10,
+      "mean_send_ms": 2336,
+      "mean_payer_settled_lamports": 3113964,
+      "mean_net_cost_lamports": 20164,
+      "mean_queue_tx_fee_lamports": 5000,
+      "arcium_base_fee_lamports": "164",
+      "mean_callback_cu": 134502
+    },
+    {
+      "step": "showdown",
+      "n": 10,
+      "p50_ms": 3767,
+      "p90_ms": 4422,
+      "max_ms": 4422,
+      "p50_slots": 10,
+      "failed_callback_txs": 10,
+      "mean_send_ms": 2207,
+      "mean_payer_settled_lamports": 3093607,
+      "mean_net_cost_lamports": 20127,
+      "mean_queue_tx_fee_lamports": 5000,
+      "arcium_base_fee_lamports": "127",
+      "mean_callback_cu": 135503
+    }
+  ],
+  "samples": [
+    {
+      "hand": 0,
+      "step": "deal",
+      "queueSig": "2QfJTS2sgGGosXHPNFspDBypwNdTJhzZniwkt7BfCuti1pGeoV15g7L1hSir9DbfZNigjW1b8mQPn4sqvGjXZsGx",
+      "callbackSig": "33kJJ8cq6vCPmUMcLJxBzZtVMCJR7YpyYZVPXgg2fC7dP4ohP7JVpNN1KYebLFSCSRtzVqfL6YQdnKdx7A6rfi9R",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "27D3zT4vi8Q3mearVT98awjPy5pdtq4S6ojNXjr7h7eRVJVq6E93XxGhuCCXuJU49YKREqoX8LtTBFX65vrzvPn7",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1412,
+      "clientTotalMs": 4621,
+      "queueSlot": 513948297,
+      "callbackSlot": 513948311,
+      "queueBlockTime": 1792687352,
+      "callbackBlockTime": 1792687355,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 125263,
+      "callbackTxCu": 140783,
+      "payerQueueDeltaLamports": 6072392,
+      "payerSettledDeltaLamports": 6072392,
+      "payerNetCostLamports": 717992,
+      "arciumBaseFeeLamports": "2032",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 0,
+      "step": "flop",
+      "queueSig": "6VhBsMKVeAeYzoEV8qZYwgStEjH7TNDGGJW6QL6VKWsk7a7PN9H3UnDhYs6N8sXWME2LCwUWjoW287d6Z1WTC1U",
+      "callbackSig": "4XwTCDmbcnWn8NFzfUmJWGBjucbwxFJ9KEiTzMWcKuzQEe1oE4CXx5YKBUX982rYZ4AfjSxCTjNXsxbLLw8CcCXj",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2vGvLduQQfqu1BJeDyKT1iCgQhrDHYf8Q6eH7AJ2n3j9J2mwEJrTSx2HPHdzF7GazKq4xQiPV38Y61koAQvY1MgP",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1417,
+      "clientTotalMs": 3991,
+      "queueSlot": 513948326,
+      "callbackSlot": 513948337,
+      "queueBlockTime": 1792687359,
+      "callbackBlockTime": 1792687361,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 118998,
+      "callbackTxCu": 131397,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 0,
+      "step": "turn",
+      "queueSig": "3LbELJnB5ESU9fDVbf6cyei4jpRwHikQhGeAzuX8X1eKeSRqHq9cRMsxxXmitXxsdsSLMZZTLhTyaV71FFM6jq2q",
+      "callbackSig": "4gwsYLAZmaBpk7dLBbpe1A2mCXeDXqb3tGJP7Entw6CyyVMYN8Eek6QkKvPV5HgfzanUXK9DVDKdcRp5W3N4HRkR",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2hqrGCGrkB7JJijZLkHsMhhMe5hqikTEySSMBajWW6rrFYRSmtwTALSDC5kyTfdYt3jnNimQBBGmsBcK8FT9HZda",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1441,
+      "clientTotalMs": 4065,
+      "queueSlot": 513948352,
+      "callbackSlot": 513948363,
+      "queueBlockTime": 1792687365,
+      "callbackBlockTime": 1792687367,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 114367,
+      "callbackTxCu": 132051,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 0,
+      "step": "river",
+      "queueSig": "4hSp8z2HrtaGMcTnnRFT7xuD2cegVTxty6nvkzPxr689a71VpSe4Rbk9k7XHhNrYyb6hQvXS4id6njvck97sjxs2",
+      "callbackSig": "3FKHLNSpQumo2QTSFLKwSSjig1VV5stSxxdkT1RbdG3n4T6D8KXvaEZYv8aKLBcA8s9FzUGR4yCZEJJGXKzquyNY",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2ByaAPt1HENe7SPQZenf7gCbA2tCxi15ZyETR3drQQ3YXvEcNUR4LW9CNxFDcdhiiRqDRHVMQYbWuoKkce2cVmq",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2448,
+      "clientTotalMs": 3759,
+      "queueSlot": 513948378,
+      "callbackSlot": 513948388,
+      "queueBlockTime": 1792687371,
+      "callbackBlockTime": 1792687374,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 128008,
+      "callbackTxCu": 132054,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 0,
+      "step": "showdown",
+      "queueSig": "5MfcJFYKwS3PvXkPzsXsFbydxmUQVtoE1WJ4W9c33uQCinJQL8DARzQxoAR674uYpikz8chHgeTnvXgg9PSa9wP1",
+      "callbackSig": "3ZBFJLQPXDbyfWbmyoMmKboyAJ4yexfXsFEzbUPa7J98v1iPPDDxAYUthkpENE1yop8VGwPvKUptccrZUmssgcPj",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "25N5QDfF6dfHJhBVGqqzAAb9Z8ks7vgEE3YpUNfmG3yLy7tv1bmxECgS21VmrPdm86Q5sGLoadRabEqkrhnKyHnV",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2475,
+      "clientTotalMs": 4422,
+      "queueSlot": 513948402,
+      "callbackSlot": 513948413,
+      "queueBlockTime": 1792687377,
+      "callbackBlockTime": 1792687379,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 133322,
+      "callbackTxCu": 132489,
+      "payerQueueDeltaLamports": 3093607,
+      "payerSettledDeltaLamports": 3093607,
+      "payerNetCostLamports": 20127,
+      "arciumBaseFeeLamports": "127",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 1,
+      "step": "deal",
+      "queueSig": "pXhfWuSfiavdGfX1EvmZ4GPhCtBZLeusrtbcbJpX2xoGFNeNFWFyiFpoTJLsdDy7GBjZBprno12hi1hjtRtCixj",
+      "callbackSig": "5PA5XW1t1Tb5sVrAUyrd9FmYWT9qq82DmzFTJ4q5f367oHKef1Mp4Wa4bw2MFfqWTyMRynAL2syMLCnuTkfrWFcJ",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "3KkpDuuJ2NYrWstgUv3kbNyxDv5FbkYR5mk3wc7CzS3Hmj1m1QQo2UT4yKKktT8kdbNQNwjuAJfQ7YXrTH5PJAdS",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1342,
+      "clientTotalMs": 4493,
+      "queueSlot": 513948431,
+      "callbackSlot": 513948444,
+      "queueBlockTime": 1792687384,
+      "callbackBlockTime": 1792687387,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 120645,
+      "callbackTxCu": 134686,
+      "payerQueueDeltaLamports": 5376432,
+      "payerSettledDeltaLamports": 5376432,
+      "payerNetCostLamports": 22032,
+      "arciumBaseFeeLamports": "2032",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 1,
+      "step": "flop",
+      "queueSig": "2ddGrpe6wjb3zr9vwF3kcjPpni2qhfRC9Kw5JAr1SzY9UX4NzhMvouLqtUX1fFcihr1b2gBWfHgCPeTAdigaKKEJ",
+      "callbackSig": "4XDEXwxScgY7SeDdUeocjiviwP1xCuijHkiaRpwWDAfG5qun2FVs8mfckVx3kiMzGLsGsHEn8bAmFw8eJPoRvdZh",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2Ma2Drw5BnvJpQBtPNr3W6fL2YvnBZAjLaqTemU4uWxNaKqag6wT89BkMRRVQdL4b5jqHvBozx3VcXeovZXM755e",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1424,
+      "clientTotalMs": 3986,
+      "queueSlot": 513948460,
+      "callbackSlot": 513948471,
+      "queueBlockTime": 1792687390,
+      "callbackBlockTime": 1792687393,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 119050,
+      "callbackTxCu": 140546,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 1,
+      "step": "turn",
+      "queueSig": "3TPjNbiv9JCrrTPHcNTCjCH8o9PjZWzZjrd2aKLw9cUTju2gCaMiHuNdx1cSHbxexuvCu11uwWKJbCXRhXrY47tU",
+      "callbackSig": "2drUWu9yjCUNpqrRt3XyLeMPcHC8vWQrcjVMeRutvkoJqtZkdV5KNtDwRboV3Bat5cpNDQGi2qPSpJ8nqb39PQzo",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2UVMURBrXaxQUUmkjhzBJQE4w9pnLuhWcSs4ESvhRi5sNvaDxcu9nrjKW7pHcNZzC5vjXfnjxFGwMv4x3hquN3UL",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2461,
+      "clientTotalMs": 3782,
+      "queueSlot": 513948486,
+      "callbackSlot": 513948496,
+      "queueBlockTime": 1792687396,
+      "callbackBlockTime": 1792687399,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 114523,
+      "callbackTxCu": 132081,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 1,
+      "step": "river",
+      "queueSig": "UuEo4scJvuirp8NmkZNwXWizTB2E2xhkjgkadhkKTCf8HFskj1wHbuBXeC1EzeeJaf5fqQszVrA3ybrkkuBsdDA",
+      "callbackSig": "vwR1KQcGFxhmucbAQ3NCG2VCp1HS23KKueTmMcbcLeGB2Ceq8sY9HCKSqrgAZpBgNRx5RAQy5X6meeWHZqnH1yG",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "AX2ifgoESf9ebPaAyAEVtTxtAunCkMXeg6nrHnwau7qxKnrNDZQJT84aRLyqN5xp3ph7aZMxe8YZeLvCvcH8MaB",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2458,
+      "clientTotalMs": 3804,
+      "queueSlot": 513948511,
+      "callbackSlot": 513948520,
+      "queueBlockTime": 1792687402,
+      "callbackBlockTime": 1792687404,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 114524,
+      "callbackTxCu": 138437,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 1,
+      "step": "showdown",
+      "queueSig": "2b1KhZ4akK1hjk3gZwuj6uszpoUJtHcVGcHqeGp6TLDep2Kp1Ave6zDLXdonWRuyd4zK8nE5GJZ2aP48vkfeGuTq",
+      "callbackSig": "5wpnap8NzTAfFyy6XNisBcu6GKxsdW9eywgzFTTxxUttCgr1AqJtS65as9xVD7jG8Aorww4omodajPDwKeYnejXQ",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "iBcSksAYKTe6aaJvay6jDupWHUDMqS6heYnFG1qx5GfvK1WF9EitytaXBWZA49boP7gyjcW3BdAoNY8JiqoE8nu",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2467,
+      "clientTotalMs": 4400,
+      "queueSlot": 513948534,
+      "callbackSlot": 513948544,
+      "queueBlockTime": 1792687408,
+      "callbackBlockTime": 1792687411,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 115393,
+      "callbackTxCu": 145727,
+      "payerQueueDeltaLamports": 3093607,
+      "payerSettledDeltaLamports": 3093607,
+      "payerNetCostLamports": 20127,
+      "arciumBaseFeeLamports": "127",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 2,
+      "step": "deal",
+      "queueSig": "2V4fhRg6xAqGrwahp4ZXuxCxENZZscn4Qk8pqCBQydxeyTcRQd4o15ZktMQuUnss4jiNnLshPe7P44m8WuevePFH",
+      "callbackSig": "2jM5JoTaE2e8VdXmkyPiqZwWX8nyNhUy2o4Hv4aSSqYtmucjvuS8jVTrpujRnJZy7gT5xh8C8X2yPYShAb5WtYLS",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "5iTVUcDggChYVywzwMwLLmhJFKtuNdtcxVQvEaCLyWfMPgq7rf7Y3fKfUUcKk4dHQv51edq2hbMwtUoNByuULBLg",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1368,
+      "clientTotalMs": 4574,
+      "queueSlot": 513948560,
+      "callbackSlot": 513948574,
+      "queueBlockTime": 1792687414,
+      "callbackBlockTime": 1792687418,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 125102,
+      "callbackTxCu": 134236,
+      "payerQueueDeltaLamports": 5376432,
+      "payerSettledDeltaLamports": 5376432,
+      "payerNetCostLamports": 22032,
+      "arciumBaseFeeLamports": "2032",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 2,
+      "step": "flop",
+      "queueSig": "45dmubsPnhpS6VQMK7HJdMuHmkCfpVDAa1bzQE4EGDLzTSaPKh6SLzZLXPwsNQoPZMzTgJSQ7DYYVnmfznHsHdWD",
+      "callbackSig": "CcxbLcXSsMdQY2Wmv9x2WzbW7zivTuGTHDWPP4U1FpW8r5ejixwT5akEdGiu2egsNkMxdDCaK2KdkMm9CQz3BtQ",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "4VLQMrVv828iBYJcwNmtFJzYhCHVXTDZjvSVBofdyVXcW1oWxWX6ptLTt7uHuazkNbsBnVh6k1uo4eHY2hfScRsJ",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1437,
+      "clientTotalMs": 4007,
+      "queueSlot": 513948591,
+      "callbackSlot": 513948600,
+      "queueBlockTime": 1792687422,
+      "callbackBlockTime": 1792687424,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 119074,
+      "callbackTxCu": 142422,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 2,
+      "step": "turn",
+      "queueSig": "37EvE9uhFZFGJb6s9Kz66ea69YY3rqasorEY2hFRN8YBT2Z338sfSVfKfzhm4vswNmwJ3EGe4CyH3MqYxPjJqbig",
+      "callbackSig": "3TkgZddWihTHAMCTH1WiC8fFJhXTTtwL6YLgKWsadn6v1ssmX7hZQWVAKAtB6xg1yAPAoYMPpVtXE8muoDyB8Sft",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "4ZdGNW8MNtgQLLYgo6d4TCz86L4muevKTjp6oEW4DLTf7dwWGBvQ5Nv1EQmn8SCUDuynSiMS833Gx4QMPrF9ztLk",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2453,
+      "clientTotalMs": 4387,
+      "queueSlot": 513948616,
+      "callbackSlot": 513948627,
+      "queueBlockTime": 1792687428,
+      "callbackBlockTime": 1792687430,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 137047,
+      "callbackTxCu": 132089,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 2,
+      "step": "river",
+      "queueSig": "2DUMqTVuVrwNn7zeFY8Xwvd4r138XuRQteUUc4tvaSRCXExDCJD9ERwyxw7i2iqQ6DHxF7NrRXnRjSjdM65y9fF4",
+      "callbackSig": "2xFKGGaiwvETFn41dUnfeRbQt6oSbfL5Nn8ggbmvDb41j5khaNV69VYvvoA1zhw36dygm2bKmCxjrbdCXYsccMjG",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "bE3sUf9cJQyyHa5oS4JBCyxwoHW2nB6b2Gdi27ffSrg39jApivQq8e6UZHs3WzU5MHLJpyxFgm11joCcXuKGWgn",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2454,
+      "clientTotalMs": 3719,
+      "queueSlot": 513948643,
+      "callbackSlot": 513948653,
+      "queueBlockTime": 1792687434,
+      "callbackBlockTime": 1792687437,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 114553,
+      "callbackTxCu": 131452,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 2,
+      "step": "showdown",
+      "queueSig": "3Y3tZjY1dJ9wx6L7dd8RHQMb1GXMmr2BpRwcyjtwusrH67jkb2WdVUwNGTPuXkqsJPHJbnzwwGNGRxuMsRSrTsKr",
+      "callbackSig": "44Ed766ysZVnLxJedffLWA5btnApypEgfRRiBvvEqzT8G6C3PaEXDGKVfNKFwDQCqVpne24CvCr4jEYqjRF8qzQZ",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "YtkP2PpejBPL61itZNj3ihNZQbTcxAgYQfqwEp4GmTgR6cWM5gS7BpzzY44F4tUnTDMQVvyvrjWQ6Xg7PNMGjq4",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2462,
+      "clientTotalMs": 3750,
+      "queueSlot": 513948667,
+      "callbackSlot": 513948676,
+      "queueBlockTime": 1792687440,
+      "callbackBlockTime": 1792687442,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 115254,
+      "callbackTxCu": 141782,
+      "payerQueueDeltaLamports": 3093607,
+      "payerSettledDeltaLamports": 3093607,
+      "payerNetCostLamports": 20127,
+      "arciumBaseFeeLamports": "127",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 3,
+      "step": "deal",
+      "queueSig": "2ckpZ445kpbM2FAADhFHeh3p6yn1xrj2YHvq1tGLTiZfJmSAuFvpuTUS7hck6LYQMshja1gY1YHfz6gZhVXTL1fR",
+      "callbackSig": "3PN8FzQ9WZJZ9xZNh2bAR84om38XXidQ2H584e4t5zPY6b1MqWoQ5w6wpcr2z24nTCihxMb8XguPSbWS7gfVLCZ7",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "5q9KCxmTbaWRMHMEdTWT1bxLfwoAke63Bnv1GjNHMdsMrcvuoULn7SZP9yNJgfG6ctoaELv3QyfE2jKgppjoAwjY",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1407,
+      "clientTotalMs": 4591,
+      "queueSlot": 513948692,
+      "callbackSlot": 513948704,
+      "queueBlockTime": 1792687446,
+      "callbackBlockTime": 1792687449,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 125101,
+      "callbackTxCu": 133595,
+      "payerQueueDeltaLamports": 5376432,
+      "payerSettledDeltaLamports": 5376432,
+      "payerNetCostLamports": 22032,
+      "arciumBaseFeeLamports": "2032",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 3,
+      "step": "flop",
+      "queueSig": "qV8Xo2s2FGq1Ghkr4Ws6igYQdyCf8wQQxTfMAmwvn2wbFHH148wj3ReM9xZj3tiT92xQ3t5Np3ZzpQVKXC1DmjQ",
+      "callbackSig": "2EU5QsG89RjsxxRt7GtbycmLP3dnkQVhTcnGpM9DNPYpqvVoB2F8NTkJ7MdNX3k9BaPW3Jx3Akw1tVkuFxMBYuzU",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2PwCWGy6xYvXAA42Bd3bPGsQQeuVuCXdb4eobb9aaQctC6wfmvWsrkcCXuWsohjwvd2Y9JorDTb6d3zGKC691BAu",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1346,
+      "clientTotalMs": 3910,
+      "queueSlot": 513948720,
+      "callbackSlot": 513948731,
+      "queueBlockTime": 1792687452,
+      "callbackBlockTime": 1792687455,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 132553,
+      "callbackTxCu": 132087,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 3,
+      "step": "turn",
+      "queueSig": "UdoVT5Ph7849LAzmDGzt8AgnVtrb1Jq67PVu5j1Y4u4SQeNugSUyBTpX6wQDwmAVXgxquA2Lg4JfGH47YgY2W4F",
+      "callbackSig": "3uELJw47gsosmPemMAPJVTDzdL6Dwzq578iK3q6CLUNfo5tSsXd281VhiLJh9DcvHPwjg7L9fP8YMVKUmUpUhmu3",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "g9qns9Jsd2QSDMpgVRMj5kRJ94eBjJiQidmuA4bwgFvy9csLPRckjKcXauH8nLGuGYW3vibpJsyXWqQU3uqbEsB",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2458,
+      "clientTotalMs": 3757,
+      "queueSlot": 513948746,
+      "callbackSlot": 513948756,
+      "queueBlockTime": 1792687458,
+      "callbackBlockTime": 1792687461,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 114526,
+      "callbackTxCu": 135529,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 3,
+      "step": "river",
+      "queueSig": "63fiY5JU5r4UNB1thLXEvgjnW4QtQzRhkBHcCxvVUjwjwKBvdRnL5GNPt7K5ncuvrRb6ShpJTdtEYE3Sw69oaZYx",
+      "callbackSig": "3ZqeC46QqsHxqsa58y3xYeX54m9F6KhQHUxrAGEHdPNfnaw7WwLyiVeghMDmvzHSMTgNb4DXtYBBmUZeBpHcjqSc",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2M5zHx94bQmwWQqP2YqWom46Y41A6vPE9vc9pbmadEc2iKYZ7dWnzaq1K7oDyKfuWAVZ6dsWaDGY9RhKJ8jKPdJ9",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2449,
+      "clientTotalMs": 3766,
+      "queueSlot": 513948770,
+      "callbackSlot": 513948780,
+      "queueBlockTime": 1792687464,
+      "callbackBlockTime": 1792687466,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 114504,
+      "callbackTxCu": 132081,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 3,
+      "step": "showdown",
+      "queueSig": "2X4JPs3j6HHqAVpt3BMoEzxJCBvfNtwJM2VVUCD3h94A7EFmni9a2st5mteXdJHJy3hzjh9jM3EaQMGEphZ1KYZY",
+      "callbackSig": "m9fPUtVwJ1m4RPqKXRGqhJkoQ58kobFDW3U1WFJMSqm7vWdmcvk7T3RnRtkQv9nDq4GYNvYjTVX6iW1Ykryjyhi",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "64YewttrdzhkMpDMf3bzuMd3BdCJ9AVuUWNuhccbDVx9p1X2j37WpETQxeQBnWwuXyaXGwPhg6YarPAiFwP7NdJo",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2470,
+      "clientTotalMs": 3779,
+      "queueSlot": 513948794,
+      "callbackSlot": 513948804,
+      "queueBlockTime": 1792687470,
+      "callbackBlockTime": 1792687472,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 115190,
+      "callbackTxCu": 132540,
+      "payerQueueDeltaLamports": 3093607,
+      "payerSettledDeltaLamports": 3093607,
+      "payerNetCostLamports": 20127,
+      "arciumBaseFeeLamports": "127",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 4,
+      "step": "deal",
+      "queueSig": "4nDgCDGfsJhohzFngcyKdQTj2Umnms75wjgjo4aVUVj8SvZeMHUBw6Vvu4KGLVrURmGoK18PxgKunqa67S5Ny1hc",
+      "callbackSig": "2Mp9KYJxBqHC5115rgCYZgYjPRMZootP4gBYe7ovdkXWb73P7uQhSL114RyZnTvkFsT2vQSp94GKNQ5VPQQDekdm",
+      "callbackOk": true,
+      "failedCallbackAttempts": 0,
+      "failedCallbackTxs": [],
+      "clientSendMs": 1441,
+      "clientTotalMs": 3996,
+      "queueSlot": 513948819,
+      "callbackSlot": 513948831,
+      "queueBlockTime": 1792687476,
+      "callbackBlockTime": 1792687479,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 122034,
+      "callbackTxCu": 137796,
+      "payerQueueDeltaLamports": 5376432,
+      "payerSettledDeltaLamports": 5376432,
+      "payerNetCostLamports": 22032,
+      "arciumBaseFeeLamports": "2032",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 4,
+      "step": "flop",
+      "queueSig": "5xwgGRXDwATochznpnB4xvxWiw7SfYYyXVSVQX84rP5f6kx9txAXpsEjBPwKHY67fXD9QgwMRCVfeaojvzSTcCJo",
+      "callbackSig": "4BXHXpZM8ohbSAGi6jdXiSRRLNBFGshvJFynntGfWBje5JEdF7swtLDr4vekjHRSwzGq6s6Vy7kSPD7RgFRjxCre",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "6DnWDsv4S5j25sYomCLzn78eAANhKUPecpctAGp7MXak9LoVt6euJ834GxTWocgwsbAdGBhWxzP9DaCRei1CEf2",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1492,
+      "clientTotalMs": 4070,
+      "queueSlot": 513948847,
+      "callbackSlot": 513948860,
+      "queueBlockTime": 1792687482,
+      "callbackBlockTime": 1792687485,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 114553,
+      "callbackTxCu": 135270,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 4,
+      "step": "turn",
+      "queueSig": "3WApFG4Vwwgt6nzHEWWEnC4sMgc9txnKY87Y2isVymnnmQkrqLgCGwDsZ9mVsXs6MaKLveJiFnF1HLMx4oWwGH9R",
+      "callbackSig": "3XkSCRRbzCYah87pdojsKnAQg9B74M5b6yWE5g3hstWNQn5exKZGg2dbfXaFJiwQy2AUNmigruae2N84qW8UKnjL",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "5nJNeHEqLQ8CKZfzNKk5zdsndt5sSe1jUDcF9mqGKBjbsxb9YcTxpEHrq7bnAFHz2Diwf3X9YnPs1AP6fMu7t3gL",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2466,
+      "clientTotalMs": 3772,
+      "queueSlot": 513948874,
+      "callbackSlot": 513948884,
+      "queueBlockTime": 1792687488,
+      "callbackBlockTime": 1792687491,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 132502,
+      "callbackTxCu": 135535,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 4,
+      "step": "river",
+      "queueSig": "4g4o44UKogvFpqKWsG6VMQJMTfMFkmTZ57Y5K2qfUXML4MZ1RA5EABivuRHHDBvQriuyA7VjweNLUTvrhDcYLmEZ",
+      "callbackSig": "irtmpMnDZ6Ju9Vpbz1umV8HpP1t43GjcRW4nMXHsUpxyDDUSYH7suTREfGND4JuCHKVfs4HAPk7vq2qb5KeJxY8",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "3G7SEaerzeGC5Mrt2FbXcrtYysh9Y79i9HxbF2JJSZXaLN4TR4JWfBJsjWmvQFkY8bhrfB2PU1eaz4R9ALYfoaYm",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2484,
+      "clientTotalMs": 3758,
+      "queueSlot": 513948898,
+      "callbackSlot": 513948909,
+      "queueBlockTime": 1792687494,
+      "callbackBlockTime": 1792687497,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 114504,
+      "callbackTxCu": 131458,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 4,
+      "step": "showdown",
+      "queueSig": "4tm9YbZiyJVCHBJMbNvBqjqgs4ebfzBnvtdhFNP9u1K7uM5AbMvFHHToMPtg72U9hUEhuCWaYpzxJpGz5AekW6bB",
+      "callbackSig": "5FYh86dUNqXHsjdnR17M8VnpeZMeBzWyj1Y4Mnk7nwiBDhkPi5wQeatQAMALMEhHwy1QCr6ej5ZTLhZdfsKxkVmx",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "3cYzTQXT5QP7q7WrFxP2aqSFkJGyuBy9Nu7cJcmbRpnt163Z29yYA52DwnzCr1DsnZSmLF6PSHaC36rphLukruAU",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1260,
+      "clientTotalMs": 3821,
+      "queueSlot": 513948922,
+      "callbackSlot": 513948931,
+      "queueBlockTime": 1792687500,
+      "callbackBlockTime": 1792687502,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 124319,
+      "callbackTxCu": 136220,
+      "payerQueueDeltaLamports": 3093607,
+      "payerSettledDeltaLamports": 3093607,
+      "payerNetCostLamports": 20127,
+      "arciumBaseFeeLamports": "127",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 5,
+      "step": "deal",
+      "queueSig": "3CahtAm2wx63s8r1mDYQhivdZyE3GzWNos8L3oHjm2VgMFTrKHuwosz6wHmRMPcMiwoyJAqNqVpzAjhomanNB1u7",
+      "callbackSig": "3PoMG5H8k7qFzoZEGCV23Fx82DdAu4zrEAv83g1NY8NJdDEVRuM58kBzjQeZVsxaf18L7UjwkGJUNjuVvd7RuT3C",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "42e9bgMRWydtvsdfSeE7nv1ACYWGBWjTK2h5WUC8Eb9Jwc3BEkBAKpJpE7ku96fVmoHHZjbmdEcCbraPQyQb2yEC",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1364,
+      "clientTotalMs": 4545,
+      "queueSlot": 513948946,
+      "callbackSlot": 513948960,
+      "queueBlockTime": 1792687506,
+      "callbackBlockTime": 1792687509,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 131080,
+      "callbackTxCu": 133706,
+      "payerQueueDeltaLamports": 5376432,
+      "payerSettledDeltaLamports": 5376432,
+      "payerNetCostLamports": 22032,
+      "arciumBaseFeeLamports": "2032",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 5,
+      "step": "flop",
+      "queueSig": "4jZeCTmsM1vxVLbmVvccvUVSb3rGaPucsn3YMiEzqmAgsFMXDFJqHRRgRdAcdjoHcXo9d2fH71E9rikMdsvPjBPE",
+      "callbackSig": "35SqV73R6ZhfH1XGZqwzs2kSWGdbXDvEkegYYuDFTTJ2p2PPUZJfD4nUXgN8DUe9vcj7zjxmfcnYRk6HGo54dPWK",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "5YBGANjLQdj5361XQKcgJ729KZRDiYCdKk3x9dhQ4uRhRyNEjHRnj3ZAbWcYsq55WhhN28q2dgrLCMUATc2RKVBb",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1433,
+      "clientTotalMs": 3980,
+      "queueSlot": 513948976,
+      "callbackSlot": 513948986,
+      "queueBlockTime": 1792687513,
+      "callbackBlockTime": 1792687516,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 123573,
+      "callbackTxCu": 137712,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 5,
+      "step": "turn",
+      "queueSig": "5hKxzoAcJfSFX5nHinConYsQPN1YD9S3LqFDSR4rHtEr2pSojYrJiB2rGgA4RUDyjxbmmLNBV4objmxE8ZTa4MNh",
+      "callbackSig": "25byhy411Q5wxwzfS6tuvEu526yRRLoyaUrH7y73jYxRLAGZAtNKbPUUQn36Jpumbob8SPbePKfeUn9hTNTTgttQ",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "4SnPzcmzNeAaRZTDWz83zNnY4T1AuiFHuFQiPdAWjH4agPP1f45QKfUvbHKntU4c9QQaT3i6bh9dDfhQGfqCLR9h",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2458,
+      "clientTotalMs": 4383,
+      "queueSlot": 513949001,
+      "callbackSlot": 513949012,
+      "queueBlockTime": 1792687519,
+      "callbackBlockTime": 1792687522,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 119049,
+      "callbackTxCu": 132078,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 5,
+      "step": "river",
+      "queueSig": "z556U3wY4vxKqoRamcuxjoc1wYf5tgZdqNdTR3mf3tE5brAYyjumCBYYG9TwuBoDoGHPGeNFRjKWwq9JTHnnb7J",
+      "callbackSig": "568qdDhBLnpYfqn6RBwS8S54LveYfkxcPjmyTfkyGeGQkuck5Mzakfyn7yGWpNUSFeDCYREhF1ithM7x9AoVL2mu",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "5TuobxaH12y1anDqWETPpRLfR4HNb6juoDX71egtVdwAi2qqE4aqLjqwucgCmgYWfrAbEpWdn77nxipqozSGR2nb",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2465,
+      "clientTotalMs": 3776,
+      "queueSlot": 513949028,
+      "callbackSlot": 513949037,
+      "queueBlockTime": 1792687526,
+      "callbackBlockTime": 1792687528,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 114478,
+      "callbackTxCu": 131986,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 5,
+      "step": "showdown",
+      "queueSig": "233VWYvqNb1dKo5bSrKkYULk3W1fGkmif5PiMrrEYESNb1zx2oywR5UmXwTc7QxEFT4Saq4rD4MgjoEf42F9hwms",
+      "callbackSig": "2NY3Z2jWDz1Q4qUopMj39uwFJHYXcTYVgtH6s9tCAQSeVgQso9NFrgPcp98XFgkiu354NXrbJ2DAGVNUJ9m7ewZ6",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "53vtKawgdHt3Z7knoJZi26taGyMk3by14q4qS6GgbA3aSFMWVBk3cdiGxZ4fH3PLEUmRK8JPupAP4Ltc7Hm7iJQj",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2452,
+      "clientTotalMs": 3351,
+      "queueSlot": 513949052,
+      "callbackSlot": 513949061,
+      "queueBlockTime": 1792687531,
+      "callbackBlockTime": 1792687533,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 110797,
+      "callbackTxCu": 132527,
+      "payerQueueDeltaLamports": 3093607,
+      "payerSettledDeltaLamports": 3093607,
+      "payerNetCostLamports": 20127,
+      "arciumBaseFeeLamports": "127",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 6,
+      "step": "deal",
+      "queueSig": "3KuFoFWj8jnKz4RLVL1z2ZYMFND6xjJnfdpVsmuzGgkE73J2M9Q7VwEwbnjn7QuJEhUGmBMHF3tv839bQTYBfxVA",
+      "callbackSig": "23A6jHbmdT9gM48irvUoYiZri3EZPYnDeuxa61jT65Lf1zH8nT893T1u4Hs1L8Lizm2VjiMrqMiobMA7UD2DtnNQ",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2QqVoZxNeqNs9rjVJUhBhSAd755FaXy8DgYEBt344usTBRCXZ8WVRqdDV1tkamPXmrbSGAHMvQxtfeXbNCAnrHVP",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1442,
+      "clientTotalMs": 4008,
+      "queueSlot": 513949076,
+      "callbackSlot": 513949088,
+      "queueBlockTime": 1792687537,
+      "callbackBlockTime": 1792687540,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 120206,
+      "callbackTxCu": 137091,
+      "payerQueueDeltaLamports": 5376432,
+      "payerSettledDeltaLamports": 5376432,
+      "payerNetCostLamports": 22032,
+      "arciumBaseFeeLamports": "2032",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 6,
+      "step": "flop",
+      "queueSig": "5899qtXjNU6xLPJi2kxDM3i8Nm5bjgpTX4mw7bCQ5F2BujpCDmDQ9fAj1cFM2xkP3vrKUkvXG1SCxLQu6gTP7Z49",
+      "callbackSig": "CT63rf5KSFr9WSamytoeHpEzoj8C5pRhHXe73NkP6HoobvvXB93mKCdisNFMzw81g8Mz2KUXsUWe3j2D1U7CkJc",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "66bkBSUT5hezFxaHTpjXmDzd25noFEbTXsZZqYZuV6C2g4eKhbsiuBdcNTjUY5fEq9JqGKRsuWfYoptDVam1MHc2",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1429,
+      "clientTotalMs": 3389,
+      "queueSlot": 513949103,
+      "callbackSlot": 513949112,
+      "queueBlockTime": 1792687543,
+      "callbackBlockTime": 1792687545,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 145779,
+      "callbackTxCu": 131460,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 6,
+      "step": "turn",
+      "queueSig": "3Lg7eGMTwAhmMGYPjtzSbRTwN9YHWz7yJ3iui3s7KhdeMFaQPoAkdyz13XaW8zXcApj2mr3BuqPqsjG6tfpaEMtx",
+      "callbackSig": "3pPArBkpFqJXEZJ5derEcPueX58ekQp9hTQdhVSXSrBAbgkWqxgYScoDVs8BBHRrRJWhd3JQJr8LC28vRdTa56BW",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "3ezpismfsTGXZJQfP7SqUinnz8m7hEnVeimdBbyyPuYEPtQmExPwm9kGNWxxPiHpUTTP76DKyTVnqaCBRwom9oKu",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2452,
+      "clientTotalMs": 3757,
+      "queueSlot": 513949126,
+      "callbackSlot": 513949136,
+      "queueBlockTime": 1792687549,
+      "callbackBlockTime": 1792687551,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 123265,
+      "callbackTxCu": 139032,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 6,
+      "step": "river",
+      "queueSig": "4oqkMdBuG4BWtnnUQSccrqVSREsbm9tZkYXv6hgQj7umXtKEPS1WGCLGTnDS9jM2q8HgZnWEhe2MRCcHKCgG8Bx8",
+      "callbackSig": "3oMhxFbA1gdrccL8mcCD2p9pZsv5qxkyoZ69cLemywRfEhjBuikEQVW3RMvkxuJo9uZirMJGGEnr3FvsNGb726hz",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "5DMrTGpJY98yw9xXnnCS94SUarr5StSqa5MJ4W5gFGNphmsaGL3PUvFmH7cQE6Akaa42Ve7GiypnsPULDz8ZhoWT",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2459,
+      "clientTotalMs": 3764,
+      "queueSlot": 513949150,
+      "callbackSlot": 513949160,
+      "queueBlockTime": 1792687555,
+      "callbackBlockTime": 1792687557,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 123534,
+      "callbackTxCu": 134955,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 6,
+      "step": "showdown",
+      "queueSig": "2MnfVp5scxnYqHW7W9HkrkQwPcAxRERHnzJeyy5W24eWSMq3xK33jFg3n8KxEF6TK8dpD31bd87sWKsck2c9XtES",
+      "callbackSig": "43RsUonPR3oAXuLzjwcpTX5fDRqbwEouX1hBhpFDHLnxM8JiaBQwNV1MgQjS3QeTZnC8pmahDgyMyu4KUhzgmbfu",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "5Zpmv4DVuUxf8QkeHChznXACFmGnjgMLd9aXUD1AY5qgJwzHC93ua3j8VfQSzDJ6CLsQn5YpzkwAstXWzEWCW2Wz",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2454,
+      "clientTotalMs": 3745,
+      "queueSlot": 513949174,
+      "callbackSlot": 513949183,
+      "queueBlockTime": 1792687560,
+      "callbackBlockTime": 1792687562,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 115373,
+      "callbackTxCu": 132682,
+      "payerQueueDeltaLamports": 3093607,
+      "payerSettledDeltaLamports": 3093607,
+      "payerNetCostLamports": 20127,
+      "arciumBaseFeeLamports": "127",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 7,
+      "step": "deal",
+      "queueSig": "3dgwp4Zsrx7GCJunpSMoKSuFxv5aPRhHPcjVFhyuTKBLLN1Sa86j81pNhNPMyoCUZTQ5thuZTTtGgaA1WpSNx63K",
+      "callbackSig": "4AHxd2K7gHzehMpnhE5LKH5spgLbDqh1u5oQJdJna4nVGTBhbwucPNAg2dGXNM6cqYzxMPkD4nP8K4XqrCTytUKu",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2t6ze1a4U2KspKLbMciivhiap2p3ZWL55gTkVRDKoArWSCjkmnwQA5wrcodVAEzL5odp7ygobZwJKTYbE3U3aXN",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1416,
+      "clientTotalMs": 4210,
+      "queueSlot": 513949196,
+      "callbackSlot": 513949208,
+      "queueBlockTime": 1792687566,
+      "callbackBlockTime": 1792687569,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 125062,
+      "callbackTxCu": 134269,
+      "payerQueueDeltaLamports": 5376432,
+      "payerSettledDeltaLamports": 5376432,
+      "payerNetCostLamports": 22032,
+      "arciumBaseFeeLamports": "2032",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 7,
+      "step": "flop",
+      "queueSig": "3Pphy2offne2tCBtpTHKmyzCoTqXseRNw8nsyaHjN55zBCdas2ic9nsEi7NfR42B1maKPzmRCR88tmVzAdiwBBMA",
+      "callbackSig": "2f8o7Rdf4TD7pNR3F7ZqA7HUBER8APTQ57HKCEGib234AWin1TwT37M6Bkedrk6KL9NAshxoH8LQVFZxyRRVEcFg",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2HVJZavPHeXtBgvrnFp3xFmJKc6mNu2DSKbgUGWskaiGtri5p2ngo5JKBgDvnzj7PHVijeFd2NrbKSj9Uoou1he3",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1413,
+      "clientTotalMs": 3950,
+      "queueSlot": 513949224,
+      "callbackSlot": 513949234,
+      "queueBlockTime": 1792687573,
+      "callbackBlockTime": 1792687575,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 114347,
+      "callbackTxCu": 132122,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 7,
+      "step": "turn",
+      "queueSig": "3wMNESfmRMBJ6wCWZsUwMCTwKCfv1x8Lbf7AK55GQRZ7iU9GyW3Vco9utuKP2anDU8NsgByn5HDVzSBNkFwGNyvv",
+      "callbackSig": "36CBg783uSc4ostSVqFZHoVmjCcZ8Etoa2tA5hxjXBuaTwZcU5zmCMf7qtc8y6YGvtS1gZCMyAYwea4oDCAXNyGw",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "54ocef9EX7kSRdgvKTBomFVeGSqGrY1U7RpoPP3GpaS8BYvPAk7ZqEHFXhbRa9hXFkQ9Yj9rQgGwjzoP8AcTk3bL",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2447,
+      "clientTotalMs": 3743,
+      "queueSlot": 513949250,
+      "callbackSlot": 513949261,
+      "queueBlockTime": 1792687579,
+      "callbackBlockTime": 1792687581,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 123546,
+      "callbackTxCu": 148101,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 7,
+      "step": "river",
+      "queueSig": "3K8Sqn9XGFskEDqsy1tMYz6m2oFVefCHoMRTyZDxVXy2NvoPMqc9QMBfgcLQu5oakcuVDrDRazCUDzZTrc22NU5a",
+      "callbackSig": "4KtCYCLc1aztoAEkYpLDuXW5hAvybT8voTr7kMd5BxywtgyNdtvQNCUezWQK542FDkZtyVyrgsi6Fxd7AH775uBp",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "3Y2JnsUBJCS9jUsUU7h3GLAah8Brfc56N34eTLBDfW7hCFVPgLD4RWsiYqBRo8kJcCkHt6P3AJYecTeNmwjT2xyD",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1248,
+      "clientTotalMs": 3793,
+      "queueSlot": 513949274,
+      "callbackSlot": 513949285,
+      "queueBlockTime": 1792687584,
+      "callbackBlockTime": 1792687587,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 154990,
+      "callbackTxCu": 141824,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 7,
+      "step": "showdown",
+      "queueSig": "SrenU8Vk1UQ3kzTXKQY1Sfpo5LEquGkY5z4Y7dZSysTGYj1dcSsyMZ8AbtZsHR9PvxrX3MuF2KoQRFvB7fMY8SD",
+      "callbackSig": "2vJxx8D4W2z8mJeKWpWHQ8Kwhsjuj89BCrPdHG8YMv1VuEHkazfy3sm1z2EpMiwwEmFY5uaVtPykZ8n5PydLPcv2",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "9iVduNngAHgWqHeQRAKoBKJE61F8yGDtu2Yg1NmFbq7sT7dpxdmh8GvpEQ1zscLTX2YwCUsvKGVGwzBJq64XeBP",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2469,
+      "clientTotalMs": 3767,
+      "queueSlot": 513949300,
+      "callbackSlot": 513949310,
+      "queueBlockTime": 1792687591,
+      "callbackBlockTime": 1792687593,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 110867,
+      "callbackTxCu": 132749,
+      "payerQueueDeltaLamports": 3093607,
+      "payerSettledDeltaLamports": 3093607,
+      "payerNetCostLamports": 20127,
+      "arciumBaseFeeLamports": "127",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 8,
+      "step": "deal",
+      "queueSig": "4vmFqYQ1GByTNEnLtaAbtQfNCxHRCwTL86zvXMenYBusZmbj6wCXWGW67GJXkuhNR8hodf88VB2ASPLa5Ef4R2ks",
+      "callbackSig": "WkkRpoqgKR3mxe4sWMb3RoHdeD2xLbpmhMm8hgekzNfa2R7ntDEuzhKB8aNaGDHfrU3CH93N3VFT47iM5EepGzu",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "3ogGHGiNewWsWZfWx1Pa9zPYwoCgAQSwH93m7gWDo6eXM3BieN646pxYFNc14S8v1Bbjg15VBL6shvut1k3eP3E7",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1348,
+      "clientTotalMs": 4502,
+      "queueSlot": 513949324,
+      "callbackSlot": 513949336,
+      "queueBlockTime": 1792687596,
+      "callbackBlockTime": 1792687599,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 120556,
+      "callbackTxCu": 134224,
+      "payerQueueDeltaLamports": 5376432,
+      "payerSettledDeltaLamports": 5376432,
+      "payerNetCostLamports": 22032,
+      "arciumBaseFeeLamports": "2032",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 8,
+      "step": "flop",
+      "queueSig": "2YyUZkfTRLRteNjHdRp3RwUzUeetPDr93Pk9baht7aD6mxiKuo7YTkWfJv89hgcVHFDJJFgxCp9vqcTNKKmLaKYc",
+      "callbackSig": "2hrRFsw8WhrPMuWFSdeTydfNQSfDFPXArn6S9aqnHMQPNFnfgESydJpDWZB886meR7oo674vS8bvcmZVaCRAPdjp",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2LS9BTvJnCYpmoE3emzgmMLUB4m3axMBpCs3yPPUoTpEAUfZvK2yTso4ECZx3MjtBzr9csgLqXVcsS385s2vuVGh",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1873,
+      "clientTotalMs": 5035,
+      "queueSlot": 513949356,
+      "callbackSlot": 513949366,
+      "queueBlockTime": 1792687604,
+      "callbackBlockTime": 1792687606,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 119143,
+      "callbackTxCu": 132080,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 8,
+      "step": "turn",
+      "queueSig": "5dA2THsAeSXh18fo7445ha4mnnDPpp3bZQTj3N1KZPnQC5h99vu7Q31TUHk8ReUV39L85bvzfEvpXV2uQ26P8ktK",
+      "callbackSig": "a6ckaHrWqkjTkGbi4zXMDr3fWbRUDcTCj3yrf7vR2n5o7TgpcM7MsTokNJwzWPekjnRuHv6JiwscSV9npWXoqg2",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2WZp18u1f23EQic2A9ACzarJLr4mkygsv33drsaNZdNRutd2kQRT5xx6Zo6urLzmQ92MQNhx19sZXGWn5TEtDMRW",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2476,
+      "clientTotalMs": 3799,
+      "queueSlot": 513949381,
+      "callbackSlot": 513949390,
+      "queueBlockTime": 1792687610,
+      "callbackBlockTime": 1792687612,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 119029,
+      "callbackTxCu": 132074,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 8,
+      "step": "river",
+      "queueSig": "2P8MrV3ma9kDij5VjKjp2hduNoLiGH62MMrgUoSUiGyjnyLmTw9585onmP1W77nnf6AkRmMuXQpRPLAzouPA4LMH",
+      "callbackSig": "3RyUQ7SAmcRAxn4fD5vPRW4KRWhbnFHzUeMtLJN6MCnkQ2AngH28duc4fkJh22GiknMbJpSsYcmt9SL2hZk3Cops",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "5Sucq4wiiTUvfTJg78q9dCgChLeU9uiFu9Cxb4d6otEyGfKKP1TFyoog6qYouamdSCJZSiePHdzMi5xt8EjCdeGS",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2438,
+      "clientTotalMs": 3753,
+      "queueSlot": 513949404,
+      "callbackSlot": 513949414,
+      "queueBlockTime": 1792687616,
+      "callbackBlockTime": 1792687618,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 118997,
+      "callbackTxCu": 132071,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 8,
+      "step": "showdown",
+      "queueSig": "3MTXEgkQhC8xbFAiVoXZXKfBJUCQwuLUZQS2FwHH3K187UYqiGZcKQsyV3hHuH8wsihVayfbFrdC3UmFTr5ahdT7",
+      "callbackSig": "5hqSJDCEAMN7ZaGv4jmZExRQHA99yrcRoX8PsPR4BWko4saxCYgaMH2DRhRVsUPaR35AjxKdCqvQpPbMpBDNvzue",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "4Srco24aFTiQ3SN8cWj9RZikapWu4KGwKr5hN99LyeJf3sa2J8Mnogw4xBNLpTfwWohLSDZBusUXDpWnV5WVcVWt",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1085,
+      "clientTotalMs": 3645,
+      "queueSlot": 513949428,
+      "callbackSlot": 513949438,
+      "queueBlockTime": 1792687621,
+      "callbackBlockTime": 1792687624,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 128922,
+      "callbackTxCu": 132438,
+      "payerQueueDeltaLamports": 3093607,
+      "payerSettledDeltaLamports": 3093607,
+      "payerNetCostLamports": 20127,
+      "arciumBaseFeeLamports": "127",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 9,
+      "step": "deal",
+      "queueSig": "4dDA48PeYDKq4XNufAdUrtw1Z8Qf1UPeG98fpkcWr6xQQbxu9PnKVuqoEY5cmm6FRqHpdvmWc3ALddHUUYQQBJzN",
+      "callbackSig": "cxLoVYbu3SisdiDigtzBypwi7d6qwmgtaG9VVcLqPAt1vxnFWbBYSms8V3KbxRsN3NKZ9PcmicENnEhpuuCgbsf",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2EfwBcSiyPZRWqfeEybdQDd9VyoonsUQjnjEDagatKohLhAKFj3s2gPrt3MKyh3ypNXLoJ3GfUBLDEePkTgVwVec",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1428,
+      "clientTotalMs": 4624,
+      "queueSlot": 513949454,
+      "callbackSlot": 513949467,
+      "queueBlockTime": 1792687627,
+      "callbackBlockTime": 1792687630,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 141602,
+      "callbackTxCu": 137164,
+      "payerQueueDeltaLamports": 5376432,
+      "payerSettledDeltaLamports": 5376432,
+      "payerNetCostLamports": 22032,
+      "arciumBaseFeeLamports": "2032",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 9,
+      "step": "flop",
+      "queueSig": "Mw9dhVUuGArpnyzbvxu1LDzJmbrJ35apaHQTTbqL5qup22csvbUjVHN9h2qFPspnpQzsmFPA3sXNaSuXiAzo45K",
+      "callbackSig": "2cCkPoP8W9mjgdtsakKreRPsx7Ba3sCykNtBbcSX1ZS6qwb5eFESjCtnXx8vStN1MsnYiAg1H5jM2HLZUtftXvy7",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2Z9cUoBNUWbuG2E9UqfxtuwN3fYzfDyHPyBSktjuCQhFoRApizTSSVLjxiU7bksx4CbddogA44DncdYyURw2eV9h",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 1364,
+      "clientTotalMs": 3912,
+      "queueSlot": 513949483,
+      "callbackSlot": 513949493,
+      "queueBlockTime": 1792687634,
+      "callbackBlockTime": 1792687636,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 119050,
+      "callbackTxCu": 131452,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 9,
+      "step": "turn",
+      "queueSig": "4LuD2j5WYJTBjL9X5HBEiMc7sfuCB6gbT7q8gHfqHdFS41bhQxfpTn8kyGEdLxfqnTcdTkNbsVbapDcbrpkA9Au8",
+      "callbackSig": "2Si1gcStTxgiViHV9ggxvDWmwnT7vQ6SjnNjh5CMgCAEQfPDgQQVeq4bqrPE2HQuNSJbH5sxjqdrSm8cnuCDLEvK",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2Vg9uMocGSLx25i3GvAzDbEhtiJ2tgPXWy3t6qsxhoAnHUh42eup9DXcy1q3jSJ6NQQ7znkKd6RshC9dTvk57JZU",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2459,
+      "clientTotalMs": 3725,
+      "queueSlot": 513949508,
+      "callbackSlot": 513949517,
+      "queueBlockTime": 1792687640,
+      "callbackBlockTime": 1792687643,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 114523,
+      "callbackTxCu": 138975,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 9,
+      "step": "river",
+      "queueSig": "xgpitCNqFFbxujNQus26agkQkQdy4kcfmZ6dB75TSdt2StBUUxiFgmzu6FJdWuopMeaBHjKTsRjh6qqR2tr1UPN",
+      "callbackSig": "5ctYJEmhcwzXziA9EpQX7LKWF2VP6Xm2zyryyvbYkAWJEom7gF9CMhHjoTDTWk4e4ujYUYFGGDQsvWY5jNbXVr2p",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "2jarr9vfogytYj8NdjnnqcqQXhjHTezHsCCaP7NWgzTaiQn534W4e18RJ9Cht14xvrrpXKxVn5eZUbxNXMLuD24t",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2456,
+      "clientTotalMs": 3729,
+      "queueSlot": 513949531,
+      "callbackSlot": 513949541,
+      "queueBlockTime": 1792687646,
+      "callbackBlockTime": 1792687648,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 114510,
+      "callbackTxCu": 138703,
+      "payerQueueDeltaLamports": 3113964,
+      "payerSettledDeltaLamports": 3113964,
+      "payerNetCostLamports": 20164,
+      "arciumBaseFeeLamports": "164",
+      "arciumPriorityFeeLamports": "0"
+    },
+    {
+      "hand": 9,
+      "step": "showdown",
+      "queueSig": "3Sa6gFCzucXpEDCqKmZAVT45Vump8qs26mMfUoi6tmPG4nGBQrtk6uuZEasCwV69fENaQTfVDPSoNvdtBuzYgQhH",
+      "callbackSig": "2UAZXFA3gSrESKPJDa9ww5FWKzZMMgwMS8SUap6RDJxwZ11HkYXgkihaBt6wrqx2eopVSV2W3H8WLcStusVQAXXr",
+      "callbackOk": true,
+      "failedCallbackAttempts": 1,
+      "failedCallbackTxs": [
+        {
+          "sig": "5YVVvSypjJchSuBjnGNZdSM51mWVsRBuswUMTRWZiyryFy2nf6dKYyYMwB8CEPjcFUeE9tB3Mf9ZWiwHtwAHWQjT",
+          "err": {
+            "InstructionError": [
+              2,
+              {
+                "Custom": 6204
+              }
+            ]
+          }
+        }
+      ],
+      "clientSendMs": 2478,
+      "clientTotalMs": 3741,
+      "queueSlot": 513949554,
+      "callbackSlot": 513949564,
+      "queueBlockTime": 1792687651,
+      "callbackBlockTime": 1792687654,
+      "queueTxFeeLamports": 5000,
+      "queueTxCu": 110693,
+      "callbackTxCu": 135871,
+      "payerQueueDeltaLamports": 3093607,
+      "payerSettledDeltaLamports": 3093607,
+      "payerNetCostLamports": 20127,
+      "arciumBaseFeeLamports": "127",
+      "arciumPriorityFeeLamports": "0"
+    }
+  ]
+}
