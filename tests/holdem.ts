@@ -83,14 +83,22 @@ function percentile(sorted: number[], p: number): number {
 }
 
 describe("Holdem benchmark", () => {
-  anchor.setProvider(anchor.AnchorProvider.env());
+  const owner = readKpJson(process.env.ANCHOR_WALLET!);
+  // Confirmed rather than Anchor's default "processed": load-balanced RPCs otherwise
+  // hand out blockhashes that the node running preflight has not seen yet.
+  anchor.setProvider(
+    new anchor.AnchorProvider(
+      new anchor.web3.Connection(process.env.ANCHOR_PROVIDER_URL!, "confirmed"),
+      new anchor.Wallet(owner),
+      { commitment: "confirmed", preflightCommitment: "confirmed" }
+    )
+  );
   const program = anchor.workspace.Holdem as Program<Holdem>;
   const provider = anchor.getProvider() as anchor.AnchorProvider;
   const conn = provider.connection;
   const arciumProgram = getArciumProgram(provider);
   // Untyped: the Arcium IDL's account types are too deep for tsc to instantiate.
   const arciumAccounts = arciumProgram.account as any;
-  const owner = readKpJson(process.env.ANCHOR_WALLET!);
   const opponent = Keypair.generate();
 
   const arciumEnv = getArciumEnv();
