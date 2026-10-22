@@ -1,12 +1,12 @@
 [package]
-name = "blackjack"
+name = "holdem"
 version = "0.1.0"
-description = "Created with Arcium & Anchor"
+description = "Throwaway heads-up Hold'em latency/cost spike on Arcium"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "blackjack"
+name = "holdem"
 
 [features]
 default = []
@@ -22,9 +22,9 @@ custom-panic = []
 [dependencies]
 anchor-lang = { version = "1.0.2", features = ["init-if-needed"] }
 
-arcium-client = { default-features = false, version = "=0.13.2" }
-arcium-macros = "=0.13.2"
-arcium-anchor = "=0.13.2"
+arcium-client = { default-features = false, version = "=0.15.0" }
+arcium-macros = "=0.15.0"
+arcium-anchor = "=0.15.0"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

@@ -1,22 +1,28 @@
 /**
- * Flow: init comp defs -> initializeBlackjackGame (shuffle_and_deal_cards) ->
- * decrypt player hand + dealer face-up card -> hit/stand loop playing basic
- * strategy -> dealerPlay -> resolveGame.
+ * Latency and cost benchmark for heads-up Hold'em on Arcium.
  *
- * Unique here: hands come back as Pack'd ciphertexts, so the client
- * decrypts a single field element and shifts out 8-bit lanes (unpackHand)
- * instead of using generated circuit types.
+ * Flow per hand: newHand (deal) -> nextStreet x3 (flop, turn, river) -> showdown.
+ * Every queued computation is timed from sending the queue transaction to the
+ * callback landing on-chain, and costed from the payer's balance and the fee the
+ * Arcium program recorded for it. Each hand also checks that each player decrypts
+ * their own hole cards and that showdown reveals exactly those cards.
+ *
+ * Env: HANDS (default 3), ARCIUM_CLUSTER_OFFSET (set by `arcium test`),
+ * CIRCUIT_BASE_URL (public URL serving build/*.arcis; required on devnet).
+ * Results: bench/results/<cluster offset>-<timestamp>.json plus a printed summary.
  */
 import * as anchor from "@anchor-lang/core";
 import { Program } from "@anchor-lang/core";
 import { PublicKey, Keypair } from "@solana/web3.js";
-import { Blackjack } from "../target/types/blackjack";
+import { Holdem } from "../target/types/holdem";
 import { randomBytes } from "crypto";
 import {
   awaitComputationFinalization,
+  claimComputationRent,
   getArciumEnv,
   getCompDefAccOffset,
   getArciumProgramId,
+  getArciumProgram,
   uploadCircuit,
   RescueCipher,
   deserializeLE,
@@ -30,880 +36,366 @@ import {
   getMXEPublicKey,
   getClusterAccAddress,
   getLookupTableAddress,
-  getArciumProgram,
 } from "@arcium-hq/client";
+import { getComputationFee } from "@arcium-hq/reader";
 import * as fs from "fs";
-import * as os from "os";
 import { expect } from "chai";
 
-function calculateHandValue(cards: number[]): {
-  value: number;
-  isSoft: boolean;
-} {
-  let value = 0;
-  let aceCount = 0;
-  let isSoft = false;
+const CIRCUITS = ["deal", "reveal_board", "showdown_reveal"] as const;
+type Circuit = (typeof CIRCUITS)[number];
+type Step = "deal" | "flop" | "turn" | "river" | "showdown";
 
-  for (const cardIndex of cards) {
-    const rank = cardIndex % 13; // 0=Ace, 1=2, ..., 9=10, 10=J, 11=Q, 12=K
-    if (rank === 0) {
-      aceCount++;
-      value += 11;
-    } else if (rank >= 10) {
-      value += 10;
-    } else {
-      value += rank + 1;
-    }
-  }
+type Sample = {
+  hand: number;
+  step: Step;
+  queueSig: string;
+  callbackSig: string;
+  callbackOk: boolean;
+  failedCallbackAttempts: number;
+  failedCallbackTxs: { sig: string; err: unknown }[];
+  clientSendMs: number;
+  clientTotalMs: number;
+  queueSlot: number;
+  callbackSlot: number;
+  queueBlockTime: number | null;
+  callbackBlockTime: number | null;
+  queueTxFeeLamports: number;
+  queueTxCu: number | null;
+  callbackTxCu: number | null;
+  payerQueueDeltaLamports: number;
+  payerSettledDeltaLamports: number;
+  payerNetCostLamports: number;
+  arciumBaseFeeLamports: string | null;
+  arciumPriorityFeeLamports: string | null;
+};
 
-  while (value > 21 && aceCount > 0) {
-    value -= 10;
-    aceCount--;
-  }
-
-  // A hand is "soft" while an Ace still counts as 11.
-  isSoft = aceCount > 0 && value <= 21;
-
-  return { value, isSoft };
+/** Pack<[u8; N]> stores u8 lanes at 8-bit boundaries of one field element. */
+function unpackU8(packed: bigint, n: number): number[] {
+  return Array.from({ length: n }, (_, i) => Number((packed >> BigInt(8 * i)) & 0xffn));
 }
 
-// Unpacks a Pack<[u8; 11]> hand from field elements.
-// Pack stores u8 values at 8-bit boundaries within each field element (26 bytes per element).
-function unpackHand(packed: bigint[], handSize: number): number[] {
-  const fieldElement = packed[0];
-  const cards: number[] = [];
-  for (let i = 0; i < handSize; i++) {
-    cards.push(Number((fieldElement >> BigInt(8 * i)) & BigInt(0xff)));
-  }
-  return cards;
+function cardName(card: number): string {
+  return "A23456789TJQK"[card % 13] + "cdhs"[Math.floor(card / 13)];
 }
 
-describe("Blackjack", () => {
-  const owner = readKpJson(`${os.homedir()}/.config/solana/id.json`);
+function percentile(sorted: number[], p: number): number {
+  return sorted[Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length))];
+}
 
+describe("Holdem benchmark", () => {
   anchor.setProvider(anchor.AnchorProvider.env());
-  const program = anchor.workspace.Blackjack as Program<Blackjack>;
+  const program = anchor.workspace.Holdem as Program<Holdem>;
   const provider = anchor.getProvider() as anchor.AnchorProvider;
-
-  type Event = anchor.IdlEvents<(typeof program)["idl"]>;
-  const awaitEvent = async <E extends keyof Event>(
-    eventName: E,
-    timeoutMs = 60000
-  ): Promise<Event[E]> => {
-    let listenerId: number;
-    let timeoutId: NodeJS.Timeout;
-    const event = await new Promise<Event[E]>((res, rej) => {
-      listenerId = program.addEventListener(eventName as any, (event) => {
-        if (timeoutId) clearTimeout(timeoutId);
-        res(event);
-      });
-      timeoutId = setTimeout(() => {
-        program.removeEventListener(listenerId);
-        rej(new Error(`Event ${eventName} timed out after ${timeoutMs}ms`));
-      }, timeoutMs);
-    });
-    await program.removeEventListener(listenerId);
-    return event;
-  };
+  const conn = provider.connection;
+  const arciumProgram = getArciumProgram(provider);
+  // Untyped: the Arcium IDL's account types are too deep for tsc to instantiate.
+  const arciumAccounts = arciumProgram.account as any;
+  const owner = readKpJson(process.env.ANCHOR_WALLET!);
+  const opponent = Keypair.generate();
 
   const arciumEnv = getArciumEnv();
-  const clusterAccount = getClusterAccAddress(arciumEnv.arciumClusterOffset);
+  const clusterOffset = arciumEnv.arciumClusterOffset;
+  const hands = Number(process.env.HANDS ?? 3);
+  // Public base URL serving build/*.arcis; unset means circuits are uploaded on-chain.
+  const circuitBaseUrl = process.env.CIRCUIT_BASE_URL?.replace(/\/$/, "");
 
-  it("Should play a full blackjack game with state awareness", async () => {
-    console.log("Owner address:", owner.publicKey.toBase58());
-
-    // Wait for MXE account to be ready before initializing comp defs
-    const mxePublicKey = await getMXEPublicKeyWithRetry(
-      provider as anchor.AnchorProvider,
-      program.programId
-    );
-
-    // --- Initialize Computation Definitions ---
-    console.log("Initializing computation definitions...");
-    const inits = [
-      { name: "Shuffle/Deal", fn: initShuffleAndDealCardsCompDef },
-      { name: "Player Hit", fn: initPlayerHitCompDef },
-      { name: "Player Stand", fn: initPlayerStandCompDef },
-      { name: "Player DoubleDown", fn: initPlayerDoubleDownCompDef },
-      { name: "Dealer Play", fn: initDealerPlayCompDef },
-      { name: "Resolve Game", fn: initResolveGameCompDef },
-    ];
-    for (const { name, fn } of inits) {
-      const sig = await fn(program as any, owner);
-      console.log(`${name} CompDef Init Sig:`, sig);
-    }
-    console.log("All computation definitions initialized.");
-
-    // --- Setup Game Cryptography ---
-    const privateKey = x25519.utils.randomSecretKey();
-    const publicKey = x25519.getPublicKey(privateKey);
-
-    console.log("MXE x25519 pubkey is", mxePublicKey);
-    const sharedSecret = x25519.getSharedSecret(privateKey, mxePublicKey);
-    const cipher = new RescueCipher(sharedSecret);
-    const clientNonce = randomBytes(16);
-    const dealerClientNonce = randomBytes(16);
-
-    const gameId = BigInt(Math.floor(Math.random() * 1000000));
-
-    const computationOffsetInit = new anchor.BN(randomBytes(8));
-
-    const gameIdBuffer = Buffer.alloc(8);
-    gameIdBuffer.writeBigUInt64LE(gameId);
-
-    const blackjackGamePDA = PublicKey.findProgramAddressSync(
-      [Buffer.from("blackjack_game"), gameIdBuffer],
-      program.programId
-    )[0];
-
-    console.log(`Game ID: ${gameId}, PDA: ${blackjackGamePDA.toBase58()}`);
-
-    // --- Initialize Game ---
-    const cardsShuffledAndDealtEventPromise = awaitEvent(
-      "cardsShuffledAndDealtEvent"
-    );
-    console.log("Initializing Blackjack game...");
-
-    const initGameSig = await program.methods
-      .initializeBlackjackGame(
-        computationOffsetInit,
-        new anchor.BN(gameId.toString()),
-        Array.from(publicKey),
-        new anchor.BN(deserializeLE(clientNonce).toString()),
-        new anchor.BN(deserializeLE(dealerClientNonce).toString())
-      )
-      .accountsPartial({
-        computationAccount: getComputationAccAddress(
-          arciumEnv.arciumClusterOffset,
-          computationOffsetInit
-        ),
-        clusterAccount: clusterAccount,
-        mxeAccount: getMXEAccAddress(program.programId),
-        mempoolAccount: getMempoolAccAddress(arciumEnv.arciumClusterOffset),
-        executingPool: getExecutingPoolAccAddress(
-          arciumEnv.arciumClusterOffset
-        ),
-        compDefAccount: getCompDefAccAddress(
-          program.programId,
-          Buffer.from(
-            getCompDefAccOffset("shuffle_and_deal_cards")
-          ).readUInt32LE()
-        ),
-        blackjackGame: blackjackGamePDA,
-      })
-      .signers([owner])
-      .rpc({
-        skipPreflight: true,
-        commitment: "confirmed",
-      });
-    console.log("Initialize game TX Signature:", initGameSig);
-
-    console.log("Waiting for shuffle/deal computation finalization...");
-    const finalizeInitSig = await awaitComputationFinalization(
-      provider,
-      computationOffsetInit,
+  const queueAccounts = (offset: anchor.BN, circuit: Circuit) => ({
+    computationAccount: getComputationAccAddress(clusterOffset, offset),
+    clusterAccount: getClusterAccAddress(clusterOffset),
+    mxeAccount: getMXEAccAddress(program.programId),
+    mempoolAccount: getMempoolAccAddress(clusterOffset),
+    executingPool: getExecutingPoolAccAddress(clusterOffset),
+    compDefAccount: getCompDefAccAddress(
       program.programId,
-      "confirmed"
-    );
-    console.log(
-      "Shuffle/deal computation finalized. Signature:",
-      finalizeInitSig
-    );
-
-    const cardsShuffledAndDealtEvent = await cardsShuffledAndDealtEventPromise;
-    console.log("Received CardsShuffledAndDealtEvent.");
-
-    let gameState = await program.account.blackjackGame.fetch(blackjackGamePDA);
-    expect(gameState.gameState).to.deep.equal({ playerTurn: {} });
-
-    // Nonces are u128s emitted as anchor.BN; the cipher needs 16 little-endian bytes.
-    let currentClientNonce = Uint8Array.from(
-      cardsShuffledAndDealtEvent.clientNonce.toArray("le", 16)
-    );
-
-    console.log("Current client nonce:", currentClientNonce);
-    let packedPlayerHand = cipher.decrypt(
-      [cardsShuffledAndDealtEvent.playerHand],
-      currentClientNonce
-    );
-    let playerHand = unpackHand(packedPlayerHand, gameState.playerHandSize);
-    let { value: playerValue, isSoft: playerIsSoft } =
-      calculateHandValue(playerHand);
-    console.log(
-      `Initial Player Hand: ${playerHand.join(", ")} (Value: ${playerValue}${
-        playerIsSoft ? " Soft" : ""
-      })`
-    );
-
-    let currentDealerClientNonce = Uint8Array.from(
-      cardsShuffledAndDealtEvent.dealerClientNonce.toArray("le", 16)
-    );
-    console.log("Current dealer client nonce:", currentDealerClientNonce);
-    let dealerFaceUpCardEncrypted = cipher.decrypt(
-      [cardsShuffledAndDealtEvent.dealerFaceUpCard],
-      currentDealerClientNonce
-    );
-    let dealerFaceUpCard = Number(dealerFaceUpCardEncrypted[0]);
-    console.log(`Dealer Face Up Card Index: ${dealerFaceUpCard}`);
-
-    // --- Player's Turn Loop ---
-    let playerBusted = false;
-    let playerStood = false;
-
-    while (
-      gameState.gameState.hasOwnProperty("playerTurn") &&
-      !playerBusted &&
-      !playerStood
-    ) {
-      console.log(
-        `\nPlayer's Turn. Hand: ${playerHand.join(
-          ", "
-        )} (Value: ${playerValue}${playerIsSoft ? " Soft" : ""})`
-      );
-
-      // Basic Strategy: Hit on 16 or less, Stand on 17 or more. Hit soft 17.
-      let action: "hit" | "stand" = "stand";
-      if (gameState.playerHandSize >= 11) {
-        action = "stand";
-      } else if (playerValue < 17 || (playerValue === 17 && playerIsSoft)) {
-        action = "hit";
-      }
-
-      if (action === "hit") {
-        console.log("Player decides to HIT.");
-        const playerHitComputationOffset = new anchor.BN(randomBytes(8));
-        const playerHitEventPromise = awaitEvent("playerHitEvent");
-        const playerBustEventPromise = awaitEvent("playerBustEvent");
-
-        const playerHitSig = await program.methods
-          .playerHit(
-            playerHitComputationOffset,
-            new anchor.BN(gameId.toString())
-          )
-          .accountsPartial({
-            computationAccount: getComputationAccAddress(
-              arciumEnv.arciumClusterOffset,
-              playerHitComputationOffset
-            ),
-            clusterAccount: clusterAccount,
-            mxeAccount: getMXEAccAddress(program.programId),
-            mempoolAccount: getMempoolAccAddress(arciumEnv.arciumClusterOffset),
-            executingPool: getExecutingPoolAccAddress(
-              arciumEnv.arciumClusterOffset
-            ),
-            compDefAccount: getCompDefAccAddress(
-              program.programId,
-              Buffer.from(getCompDefAccOffset("player_hit")).readUInt32LE()
-            ),
-            blackjackGame: blackjackGamePDA,
-            payer: owner.publicKey,
-          })
-          .signers([owner])
-          .rpc({
-            skipPreflight: true,
-            commitment: "confirmed",
-          });
-        console.log("Player Hit TX Signature:", playerHitSig);
-
-        console.log("Waiting for player hit computation finalization...");
-        const finalizeHitSig = await awaitComputationFinalization(
-          provider,
-          playerHitComputationOffset,
-          program.programId,
-          "confirmed"
-        );
-        console.log(
-          "Player Hit computation finalized. Signature:",
-          finalizeHitSig
-        );
-
-        try {
-          const playerHitEvent = await Promise.race([
-            playerHitEventPromise,
-            playerBustEventPromise,
-          ]);
-
-          gameState = await program.account.blackjackGame.fetch(
-            blackjackGamePDA
-          );
-
-          if ("playerHand" in playerHitEvent) {
-            console.log("Received PlayerHitEvent.");
-            currentClientNonce = Uint8Array.from(
-              playerHitEvent.clientNonce.toArray("le", 16)
-            );
-            packedPlayerHand = cipher.decrypt(
-              [playerHitEvent.playerHand],
-              currentClientNonce
-            );
-            playerHand = unpackHand(packedPlayerHand, gameState.playerHandSize);
-            ({ value: playerValue, isSoft: playerIsSoft } =
-              calculateHandValue(playerHand));
-            console.log(
-              `New Player Hand: ${playerHand.join(
-                ", "
-              )} (Value: ${playerValue}${playerIsSoft ? " Soft" : ""})`
-            );
-
-            if (playerValue > 21) {
-              expect(
-                playerValue,
-                "Bust detected after PlayerHitEvent, expected PlayerBustEvent"
-              ).to.be.at.most(21);
-            }
-          } else {
-            console.log("Received PlayerBustEvent.");
-            playerBusted = true;
-            expect(gameState.gameState).to.deep.equal({ resolving: {} });
-            console.log("Player BUSTED!");
-          }
-        } catch (e) {
-          console.error("Error waiting for player hit/bust event:", e);
-          throw e;
-        }
-      } else {
-        console.log("Player decides to STAND.");
-        const playerStandComputationOffset = new anchor.BN(randomBytes(8));
-        const playerStandEventPromise = awaitEvent("playerStandEvent");
-        const playerBustOnStandEventPromise = awaitEvent("playerBustEvent");
-
-        const playerStandSig = await program.methods
-          .playerStand(
-            playerStandComputationOffset,
-            new anchor.BN(gameId.toString())
-          )
-          .accountsPartial({
-            computationAccount: getComputationAccAddress(
-              arciumEnv.arciumClusterOffset,
-              playerStandComputationOffset
-            ),
-            clusterAccount: clusterAccount,
-            mxeAccount: getMXEAccAddress(program.programId),
-            mempoolAccount: getMempoolAccAddress(arciumEnv.arciumClusterOffset),
-            executingPool: getExecutingPoolAccAddress(
-              arciumEnv.arciumClusterOffset
-            ),
-            compDefAccount: getCompDefAccAddress(
-              program.programId,
-              Buffer.from(getCompDefAccOffset("player_stand")).readUInt32LE()
-            ),
-            blackjackGame: blackjackGamePDA,
-            payer: owner.publicKey,
-          })
-          .signers([owner])
-          .rpc({
-            skipPreflight: true,
-            commitment: "confirmed",
-          });
-        console.log("Player Stand TX Signature:", playerStandSig);
-
-        console.log("Waiting for player stand computation finalization...");
-        const finalizeStandSig = await awaitComputationFinalization(
-          provider,
-          playerStandComputationOffset,
-          program.programId,
-          "confirmed"
-        );
-        console.log(
-          "Player Stand computation finalized. Signature:",
-          finalizeStandSig
-        );
-
-        const standEvent = await Promise.race([
-          playerStandEventPromise,
-          playerBustOnStandEventPromise,
-        ]);
-
-        gameState = await program.account.blackjackGame.fetch(blackjackGamePDA);
-
-        if (!("clientNonce" in standEvent)) {
-          console.log("Received PlayerStandEvent.");
-          playerStood = true;
-          expect(gameState.gameState).to.deep.equal({ dealerTurn: {} });
-          console.log("Player stands. Proceeding to Dealer's Turn.");
-        } else {
-          console.log("Received PlayerBustEvent during stand.");
-          playerBusted = true;
-          expect(gameState.gameState).to.deep.equal({ resolving: {} });
-          console.log("Player BUSTED during stand!");
-        }
-      }
-
-      if (!playerBusted && !playerStood) {
-        await new Promise((res) => setTimeout(res, 1000));
-        gameState = await program.account.blackjackGame.fetch(blackjackGamePDA);
-      }
-    }
-
-    // --- Dealer's Turn ---
-    gameState = await program.account.blackjackGame.fetch(blackjackGamePDA);
-    if (gameState.gameState.hasOwnProperty("dealerTurn")) {
-      console.log("Dealer's Turn...");
-      const dealerPlayComputationOffset = new anchor.BN(randomBytes(8));
-      const dealerPlayNonce = randomBytes(16);
-      const dealerPlayEventPromise = awaitEvent("dealerPlayEvent");
-
-      const dealerPlaySig = await program.methods
-        .dealerPlay(
-          dealerPlayComputationOffset,
-          new anchor.BN(gameId.toString()),
-          new anchor.BN(deserializeLE(dealerPlayNonce).toString())
-        )
-        .accountsPartial({
-          computationAccount: getComputationAccAddress(
-            arciumEnv.arciumClusterOffset,
-            dealerPlayComputationOffset
-          ),
-          clusterAccount: clusterAccount,
-          mxeAccount: getMXEAccAddress(program.programId),
-          mempoolAccount: getMempoolAccAddress(arciumEnv.arciumClusterOffset),
-          executingPool: getExecutingPoolAccAddress(
-            arciumEnv.arciumClusterOffset
-          ),
-          compDefAccount: getCompDefAccAddress(
-            program.programId,
-            Buffer.from(getCompDefAccOffset("dealer_play")).readUInt32LE()
-          ),
-          blackjackGame: blackjackGamePDA,
-        })
-        .signers([owner])
-        .rpc({
-          skipPreflight: true,
-          commitment: "confirmed",
-        });
-      console.log("Dealer Play TX Signature:", dealerPlaySig);
-
-      console.log("Waiting for dealer play computation finalization...");
-      const finalizeDealerPlaySig = await awaitComputationFinalization(
-        provider,
-        dealerPlayComputationOffset,
-        program.programId,
-        "confirmed"
-      );
-      console.log(
-        "Dealer Play computation finalized. Signature:",
-        finalizeDealerPlaySig
-      );
-
-      const dealerPlayEvent = await dealerPlayEventPromise;
-      console.log("Received DealerPlayEvent.");
-
-      const finalDealerNonce = Uint8Array.from(
-        dealerPlayEvent.clientNonce.toArray("le", 16)
-      );
-      const packedDealerHand = cipher.decrypt(
-        [dealerPlayEvent.dealerHand],
-        finalDealerNonce
-      );
-      const dealerHand = unpackHand(
-        packedDealerHand,
-        dealerPlayEvent.dealerHandSize
-      );
-      const { value: dealerValue } = calculateHandValue(dealerHand);
-      console.log(
-        `Final Dealer Hand: ${dealerHand.join(", ")} (Value: ${dealerValue})`
-      );
-      gameState = await program.account.blackjackGame.fetch(blackjackGamePDA);
-      expect(gameState.gameState).to.deep.equal({ resolving: {} });
-    }
-
-    gameState = await program.account.blackjackGame.fetch(blackjackGamePDA);
-    if (gameState.gameState.hasOwnProperty("resolving")) {
-      console.log("Resolving Game...");
-      const resolveComputationOffset = new anchor.BN(randomBytes(8));
-      const resultEventPromise = awaitEvent("resultEvent");
-
-      const resolveSig = await program.methods
-        .resolveGame(resolveComputationOffset, new anchor.BN(gameId.toString()))
-        .accountsPartial({
-          computationAccount: getComputationAccAddress(
-            arciumEnv.arciumClusterOffset,
-            resolveComputationOffset
-          ),
-          clusterAccount: clusterAccount,
-          mxeAccount: getMXEAccAddress(program.programId),
-          mempoolAccount: getMempoolAccAddress(arciumEnv.arciumClusterOffset),
-          executingPool: getExecutingPoolAccAddress(
-            arciumEnv.arciumClusterOffset
-          ),
-          compDefAccount: getCompDefAccAddress(
-            program.programId,
-            Buffer.from(getCompDefAccOffset("resolve_game")).readUInt32LE()
-          ),
-          blackjackGame: blackjackGamePDA,
-          payer: owner.publicKey,
-        })
-        .signers([owner])
-        .rpc({
-          skipPreflight: true,
-          commitment: "confirmed",
-        });
-      console.log("Resolve Game TX Signature:", resolveSig);
-
-      console.log("Waiting for resolve game computation finalization...");
-      const finalizeResolveSig = await awaitComputationFinalization(
-        provider,
-        resolveComputationOffset,
-        program.programId,
-        "confirmed"
-      );
-      console.log(
-        "Resolve Game computation finalized. Signature:",
-        finalizeResolveSig
-      );
-
-      const resultEvent = await resultEventPromise;
-      console.log("Received ResultEvent.");
-      console.log(`GAME OVER! Winner: ${resultEvent.winner}`);
-      expect(["Player", "Dealer", "Tie"]).to.include(resultEvent.winner);
-
-      gameState = await program.account.blackjackGame.fetch(blackjackGamePDA);
-      expect(gameState.gameState).to.deep.equal({ resolved: {} });
-    } else {
-      console.warn(
-        `Skipping Resolve Game step. Current state: ${
-          Object.keys(gameState.gameState)[0]
-        }`
-      );
-    }
+      Buffer.from(getCompDefAccOffset(circuit)).readUInt32LE()
+    ),
   });
 
-  async function initShuffleAndDealCardsCompDef(
-    program: Program<Blackjack>,
-    owner: Keypair
-  ): Promise<string> {
-    const baseSeedCompDefAcc = getArciumAccountBaseSeed(
-      "ComputationDefinitionAccount"
-    );
-    const offset = getCompDefAccOffset("shuffle_and_deal_cards");
+  const handPda = (handId: bigint) => {
+    const id = Buffer.alloc(8);
+    id.writeBigUInt64LE(handId);
+    return PublicKey.findProgramAddressSync([Buffer.from("hand"), id], program.programId)[0];
+  };
 
-    const compDefPDA = PublicKey.findProgramAddressSync(
-      [baseSeedCompDefAcc, program.programId.toBuffer(), offset],
-      getArciumProgramId()
-    )[0];
-
-    console.log("Shuffle/Deal CompDef PDA:", compDefPDA.toBase58());
-
-    const arciumProgram = getArciumProgram(provider);
-    const compDefAccount =
-      await arciumProgram.account.computationDefinitionAccount.fetchNullable(
-        compDefPDA
-      );
-    if (compDefAccount !== null) {
-      console.log("Shuffle/Deal CompDef already initialized.");
-      return "Already Initialized";
+  /**
+   * Finds the callback: the successful transaction after the queue that writes the
+   * hand account. Signature indexing can trail finalization, so retry briefly.
+   */
+  async function findCallback(handAccount: PublicKey, queueSig: string) {
+    const opts = { commitment: "confirmed" as const, maxSupportedTransactionVersion: 0 };
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const newer = await conn.getSignaturesForAddress(handAccount, { until: queueSig }, "confirmed");
+      const ok = newer.filter((s) => s.err === null);
+      if (ok.length > 0) {
+        const callbackSig = ok[ok.length - 1].signature;
+        const failed = newer.filter((s) => s.err !== null).map((s) => ({ sig: s.signature, err: s.err }));
+        return { callbackSig, failed, tx: await conn.getTransaction(callbackSig, opts) };
+      }
+      await new Promise((r) => setTimeout(r, 500));
     }
-
-    const mxeAccount = getMXEAccAddress(program.programId);
-    const mxeAcc = await arciumProgram.account.mxeAccount.fetch(mxeAccount);
-    const lutAddress = getLookupTableAddress(
-      program.programId,
-      mxeAcc.lutOffsetSlot
-    );
-
-    const sig = await program.methods
-      .initShuffleAndDealCardsCompDef()
-      .accounts({
-        compDefAccount: compDefPDA,
-        payer: owner.publicKey,
-        mxeAccount,
-        addressLookupTable: lutAddress,
-      })
-      .rpc({
-        skipPreflight: true,
-        commitment: "confirmed",
-      });
-
-    const rawCircuit = fs.readFileSync("build/shuffle_and_deal_cards.arcis");
-    await uploadCircuit(
-      provider as anchor.AnchorProvider,
-      "shuffle_and_deal_cards",
-      program.programId,
-      rawCircuit,
-      true
-    );
-
-    return sig;
+    return null;
   }
 
-  async function initPlayerHitCompDef(
-    program: Program<Blackjack>,
-    owner: Keypair
-  ): Promise<string> {
-    const baseSeedCompDefAcc = getArciumAccountBaseSeed(
-      "ComputationDefinitionAccount"
+  /** Sends one queue transaction and waits for its callback to land. */
+  async function measure(
+    hand: number,
+    step: Step,
+    offset: anchor.BN,
+    handAccount: PublicKey,
+    send: () => Promise<string>
+  ): Promise<Sample> {
+    const before = await conn.getBalance(owner.publicKey, "confirmed");
+    const t0 = performance.now();
+    const queueSig = await send();
+    const t1 = performance.now();
+    const fee = await getComputationFee(arciumProgram as any, program.programId, offset, "confirmed").catch(
+      () => null
     );
-    const offset = getCompDefAccOffset("player_hit");
-    const compDefPDA = PublicKey.findProgramAddressSync(
-      [baseSeedCompDefAcc, program.programId.toBuffer(), offset],
-      getArciumProgramId()
-    )[0];
-    console.log("Player Hit CompDef PDA:", compDefPDA.toBase58());
+    await awaitComputationFinalization(provider, offset, program.programId, "confirmed", 600_000);
+    const t2 = performance.now();
 
-    const arciumProgram = getArciumProgram(provider);
-    const compDefAccount =
-      await arciumProgram.account.computationDefinitionAccount.fetchNullable(
-        compDefPDA
-      );
-    if (compDefAccount !== null) {
-      console.log("Player Hit CompDef already initialized.");
-      return "Already Initialized";
-    }
-
-    const mxeAccount = getMXEAccAddress(program.programId);
-    const mxeAcc = await arciumProgram.account.mxeAccount.fetch(mxeAccount);
-    const lutAddress = getLookupTableAddress(
-      program.programId,
-      mxeAcc.lutOffsetSlot
-    );
-
-    const sig = await program.methods
-      .initPlayerHitCompDef()
-      .accounts({
-        compDefAccount: compDefPDA,
-        payer: owner.publicKey,
-        mxeAccount,
-        addressLookupTable: lutAddress,
-      })
-      .rpc({
-        skipPreflight: true,
-        commitment: "confirmed",
-      });
-
-    const rawCircuit = fs.readFileSync("build/player_hit.arcis");
-    await uploadCircuit(
-      provider as anchor.AnchorProvider,
-      "player_hit",
-      program.programId,
-      rawCircuit,
-      true
+    const callback = await findCallback(handAccount, queueSig);
+    const callbackTx = callback?.tx;
+    const queueTx = await conn.getTransaction(queueSig, {
+      commitment: "confirmed",
+      maxSupportedTransactionVersion: 0,
+    });
+    const after = await conn.getBalance(owner.publicKey, "confirmed");
+    // The payer deposits rent for the computation account and must reclaim it.
+    await claimComputationRent(provider, clusterOffset, offset, { commitment: "confirmed" });
+    const afterClaim = await conn.getBalance(owner.publicKey, "confirmed");
+    // The deal also funds the Hand PDA's rent, which is not part of the MPC cost.
+    const handRentLamports = step === "deal" ? (await conn.getAccountInfo(handAccount, "confirmed"))!.lamports : 0;
+    const payerIndex = queueTx!.transaction.message.staticAccountKeys.findIndex((k) =>
+      k.equals(owner.publicKey)
     );
 
-    return sig;
+    return {
+      hand,
+      step,
+      queueSig,
+      callbackSig: callback?.callbackSig ?? "",
+      callbackOk: !!callbackTx && callbackTx.meta?.err === null,
+      failedCallbackAttempts: callback?.failed.length ?? 0,
+      failedCallbackTxs: callback?.failed ?? [],
+      clientSendMs: Math.round(t1 - t0),
+      clientTotalMs: Math.round(t2 - t0),
+      queueSlot: queueTx!.slot,
+      callbackSlot: callbackTx?.slot ?? -1,
+      queueBlockTime: queueTx!.blockTime ?? null,
+      callbackBlockTime: callbackTx?.blockTime ?? null,
+      queueTxFeeLamports: queueTx!.meta!.fee,
+      queueTxCu: queueTx!.meta!.computeUnitsConsumed ?? null,
+      callbackTxCu: callbackTx?.meta?.computeUnitsConsumed ?? null,
+      payerQueueDeltaLamports: queueTx!.meta!.preBalances[payerIndex] - queueTx!.meta!.postBalances[payerIndex],
+      payerSettledDeltaLamports: before - after,
+      // Includes the queue tx, Arcium fees and the reclaim tx; excludes the refunded rent.
+      payerNetCostLamports: before - afterClaim - handRentLamports,
+      arciumBaseFeeLamports: fee ? fee.baseFee.toString() : null,
+      arciumPriorityFeeLamports: fee ? fee.priorityFee.toString() : null,
+    };
   }
 
-  async function initPlayerStandCompDef(
-    program: Program<Blackjack>,
-    owner: Keypair
-  ): Promise<string> {
-    const baseSeedCompDefAcc = getArciumAccountBaseSeed(
-      "ComputationDefinitionAccount"
-    );
-    const offset = getCompDefAccOffset("player_stand");
-    const compDefPDA = PublicKey.findProgramAddressSync(
-      [baseSeedCompDefAcc, program.programId.toBuffer(), offset],
-      getArciumProgramId()
-    )[0];
-    console.log("Player Stand CompDef PDA:", compDefPDA.toBase58());
+  it("plays heads-up hands and records latency and cost per computation", async () => {
+    console.log(`Payer ${owner.publicKey.toBase58()}, cluster offset ${clusterOffset}, ${hands} hand(s)`);
+    const mxePublicKey = await getMXEPublicKeyWithRetry(provider, program.programId);
 
-    const arciumProgram = getArciumProgram(provider);
-    const compDefAccount =
-      await arciumProgram.account.computationDefinitionAccount.fetchNullable(
-        compDefPDA
+    for (const circuit of CIRCUITS) {
+      console.log(`Comp def ${circuit}: ${await initCompDef(circuit)}`);
+    }
+    const circuitInfo = await describeCircuits();
+    console.log("Circuits:", circuitInfo);
+
+    const samples: Sample[] = [];
+    for (let h = 0; h < hands; h++) {
+      const players = [0, 1].map(() => {
+        const secret = x25519.utils.randomSecretKey();
+        return {
+          pubkey: x25519.getPublicKey(secret),
+          cipher: new RescueCipher(x25519.getSharedSecret(secret, mxePublicKey)),
+        };
+      });
+      const handId = deserializeLE(randomBytes(8));
+      const hand = handPda(handId);
+
+      let offset = new anchor.BN(randomBytes(8), "hex");
+      const dealOffset = offset;
+      samples.push(
+        await measure(h, "deal", offset, hand, () =>
+          program.methods
+            .newHand(
+              dealOffset,
+              new anchor.BN(handId.toString()),
+              opponent.publicKey,
+              Array.from(players[0].pubkey),
+              new anchor.BN(deserializeLE(randomBytes(16)).toString()),
+              Array.from(players[1].pubkey),
+              new anchor.BN(deserializeLE(randomBytes(16)).toString())
+            )
+            .accountsPartial({ ...queueAccounts(dealOffset, "deal"), hand })
+            .signers([owner])
+            .rpc({ skipPreflight: true, commitment: "confirmed" })
+        )
       );
-    if (compDefAccount !== null) {
-      console.log("Player Stand CompDef already initialized.");
-      return "Already Initialized";
+
+      let state = await program.account.hand.fetch(hand);
+      const holes = [0, 1].map((seat) =>
+        unpackU8(
+          players[seat].cipher.decrypt(
+            [state.holeCiphertexts[seat]],
+            Uint8Array.from(state.holeNonces[seat].toArray("le", 16))
+          )[0],
+          2
+        )
+      );
+      // Player 1's key cannot open player 0's cards.
+      const crossRead = unpackU8(
+        players[1].cipher.decrypt(
+          [state.holeCiphertexts[0]],
+          Uint8Array.from(state.holeNonces[0].toArray("le", 16))
+        )[0],
+        2
+      );
+      expect(crossRead).to.not.deep.equal(holes[0]);
+
+      for (const step of ["flop", "turn", "river"] as const) {
+        offset = new anchor.BN(randomBytes(8), "hex");
+        const streetOffset = offset;
+        samples.push(
+          await measure(h, step, offset, hand, () =>
+            program.methods
+              .nextStreet(streetOffset, new anchor.BN(handId.toString()))
+              .accountsPartial({ ...queueAccounts(streetOffset, "reveal_board"), hand, payer: owner.publicKey })
+              .signers([owner])
+              .rpc({ skipPreflight: true, commitment: "confirmed" })
+          )
+        );
+      }
+
+      offset = new anchor.BN(randomBytes(8), "hex");
+      const showdownOffset = offset;
+      samples.push(
+        await measure(h, "showdown", offset, hand, () =>
+          program.methods
+            .showdown(showdownOffset, new anchor.BN(handId.toString()))
+            .accountsPartial({ ...queueAccounts(showdownOffset, "showdown_reveal"), hand, payer: owner.publicKey })
+            .signers([owner])
+            .rpc({ skipPreflight: true, commitment: "confirmed" })
+        )
+      );
+
+      state = await program.account.hand.fetch(hand);
+      expect(state.stage).to.deep.equal({ complete: {} });
+      expect(state.holeCards).to.deep.equal([...holes[0], ...holes[1]]);
+      const dealt = [...state.holeCards, ...state.board];
+      expect(new Set(dealt).size, "every dealt card is distinct").to.equal(9);
+      expect(dealt.every((c) => c >= 0 && c < 52)).to.equal(true);
+      const [s0, s1] = state.scores;
+      expect(state.winner).to.equal(s0 > s1 ? 0 : s1 > s0 ? 1 : 2);
+
+      console.log(
+        `Hand ${h}: p0 ${holes[0].map(cardName).join(" ")} | p1 ${holes[1].map(cardName).join(" ")} | ` +
+          `board ${Array.from(state.board).map(cardName).join(" ")} | winner ${["p0", "p1", "split"][state.winner]} | ` +
+          samples
+            .filter((s) => s.hand === h)
+            .map((s) => `${s.step} ${(s.clientTotalMs / 1000).toFixed(1)}s`)
+            .join(", ")
+      );
     }
 
-    const mxeAccount = getMXEAccAddress(program.programId);
-    const mxeAcc = await arciumProgram.account.mxeAccount.fetch(mxeAccount);
-    const lutAddress = getLookupTableAddress(
-      program.programId,
-      mxeAcc.lutOffsetSlot
+    const report = summarize(samples);
+    console.table(report);
+    fs.mkdirSync("bench/results", { recursive: true });
+    const file = `bench/results/${clusterOffset}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    fs.writeFileSync(
+      file,
+      JSON.stringify(
+        { clusterOffset, rpc: conn.rpcEndpoint, programId: program.programId.toBase58(), circuitInfo, report, samples },
+        null,
+        2
+      )
     );
+    console.log(`Wrote ${file}`);
 
-    const sig = await program.methods
-      .initPlayerStandCompDef()
-      .accounts({
-        compDefAccount: compDefPDA,
-        payer: owner.publicKey,
-        mxeAccount,
-        addressLookupTable: lutAddress,
-      })
-      .rpc({
-        skipPreflight: true,
-        commitment: "confirmed",
-      });
+    const missing = samples.filter((s) => !s.callbackOk).map((s) => `${s.hand}/${s.step} ${s.queueSig}`);
+    expect(missing, "every callback landed without error").to.deep.equal([]);
+  });
 
-    const rawCircuit = fs.readFileSync("build/player_stand.arcis");
-    await uploadCircuit(
-      provider as anchor.AnchorProvider,
-      "player_stand",
-      program.programId,
-      rawCircuit,
-      true
-    );
-
-    return sig;
+  function summarize(samples: Sample[]) {
+    const steps: Step[] = ["deal", "flop", "turn", "river", "showdown"];
+    return steps.map((step) => {
+      const rows = samples.filter((s) => s.step === step);
+      const total = rows.map((s) => s.clientTotalMs).sort((a, b) => a - b);
+      const slots = rows.map((s) => s.callbackSlot - s.queueSlot).sort((a, b) => a - b);
+      const mean = (xs: number[]) => Math.round(xs.reduce((a, b) => a + b, 0) / xs.length);
+      return {
+        step,
+        n: rows.length,
+        p50_ms: percentile(total, 50),
+        p90_ms: percentile(total, 90),
+        max_ms: total[total.length - 1],
+        p50_slots: percentile(slots, 50),
+        failed_callback_txs: rows.reduce((n, s) => n + s.failedCallbackAttempts, 0),
+        mean_send_ms: mean(rows.map((s) => s.clientSendMs)),
+        mean_payer_settled_lamports: mean(rows.map((s) => s.payerSettledDeltaLamports)),
+        mean_net_cost_lamports: mean(rows.map((s) => s.payerNetCostLamports)),
+        mean_queue_tx_fee_lamports: mean(rows.map((s) => s.queueTxFeeLamports)),
+        arcium_base_fee_lamports: rows.find((s) => s.arciumBaseFeeLamports)?.arciumBaseFeeLamports ?? "n/a",
+        mean_callback_cu: mean(rows.map((s) => s.callbackTxCu ?? 0)),
+      };
+    });
   }
 
-  async function initPlayerDoubleDownCompDef(
-    program: Program<Blackjack>,
-    owner: Keypair
-  ): Promise<string> {
-    const baseSeedCompDefAcc = getArciumAccountBaseSeed(
-      "ComputationDefinitionAccount"
-    );
-    const offset = getCompDefAccOffset("player_double_down");
-    const compDefPDA = PublicKey.findProgramAddressSync(
-      [baseSeedCompDefAcc, program.programId.toBuffer(), offset],
-      getArciumProgramId()
-    )[0];
-    console.log("Player DoubleDown CompDef PDA:", compDefPDA.toBase58());
-
-    const arciumProgram = getArciumProgram(provider);
-    const compDefAccount =
-      await arciumProgram.account.computationDefinitionAccount.fetchNullable(
-        compDefPDA
-      );
-    if (compDefAccount !== null) {
-      console.log("Player DoubleDown CompDef already initialized.");
-      return "Already Initialized";
+  /** Circuit weight (cuAmount), cluster CU price, and compiled circuit size. */
+  async function describeCircuits() {
+    const cluster = await arciumAccounts.cluster.fetch(getClusterAccAddress(clusterOffset));
+    const out: Record<string, unknown> = { clusterCuPriceMicroLamports: cluster.cuPrice.toString() };
+    for (const circuit of CIRCUITS) {
+      const compDef = await arciumAccounts.computationDefinitionAccount.fetch(compDefPda(circuit));
+      out[circuit] = {
+        cuAmount: compDef.cuAmount.toString(),
+        circuitBytes: fs.statSync(`build/${circuit}.arcis`).size,
+      };
     }
-
-    const mxeAccount = getMXEAccAddress(program.programId);
-    const mxeAcc = await arciumProgram.account.mxeAccount.fetch(mxeAccount);
-    const lutAddress = getLookupTableAddress(
-      program.programId,
-      mxeAcc.lutOffsetSlot
-    );
-
-    const sig = await program.methods
-      .initPlayerDoubleDownCompDef()
-      .accounts({
-        compDefAccount: compDefPDA,
-        payer: owner.publicKey,
-        mxeAccount,
-        addressLookupTable: lutAddress,
-      })
-      .rpc({
-        skipPreflight: true,
-        commitment: "confirmed",
-      });
-
-    const rawCircuit = fs.readFileSync("build/player_double_down.arcis");
-    await uploadCircuit(
-      provider as anchor.AnchorProvider,
-      "player_double_down",
-      program.programId,
-      rawCircuit,
-      true
-    );
-
-    return sig;
+    return out;
   }
 
-  async function initDealerPlayCompDef(
-    program: Program<Blackjack>,
-    owner: Keypair
-  ): Promise<string> {
-    const baseSeedCompDefAcc = getArciumAccountBaseSeed(
-      "ComputationDefinitionAccount"
-    );
-    const offset = getCompDefAccOffset("dealer_play");
-    const compDefPDA = PublicKey.findProgramAddressSync(
-      [baseSeedCompDefAcc, program.programId.toBuffer(), offset],
+  function compDefPda(circuit: Circuit): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [getArciumAccountBaseSeed("ComputationDefinitionAccount"), program.programId.toBuffer(), getCompDefAccOffset(circuit)],
       getArciumProgramId()
     )[0];
-    console.log("Dealer Play CompDef PDA:", compDefPDA.toBase58());
-
-    const arciumProgram = getArciumProgram(provider);
-    const compDefAccount =
-      await arciumProgram.account.computationDefinitionAccount.fetchNullable(
-        compDefPDA
-      );
-    if (compDefAccount !== null) {
-      console.log("Dealer Play CompDef already initialized.");
-      return "Already Initialized";
-    }
-
-    const mxeAccount = getMXEAccAddress(program.programId);
-    const mxeAcc = await arciumProgram.account.mxeAccount.fetch(mxeAccount);
-    const lutAddress = getLookupTableAddress(
-      program.programId,
-      mxeAcc.lutOffsetSlot
-    );
-
-    const sig = await program.methods
-      .initDealerPlayCompDef()
-      .accounts({
-        compDefAccount: compDefPDA,
-        payer: owner.publicKey,
-        mxeAccount,
-        addressLookupTable: lutAddress,
-      })
-      .rpc({
-        skipPreflight: true,
-        commitment: "confirmed",
-      });
-
-    const rawCircuit = fs.readFileSync("build/dealer_play.arcis");
-    await uploadCircuit(
-      provider as anchor.AnchorProvider,
-      "dealer_play",
-      program.programId,
-      rawCircuit,
-      true
-    );
-
-    return sig;
   }
 
-  async function initResolveGameCompDef(
-    program: Program<Blackjack>,
-    owner: Keypair
-  ): Promise<string> {
-    const baseSeedCompDefAcc = getArciumAccountBaseSeed(
-      "ComputationDefinitionAccount"
-    );
-    const offset = getCompDefAccOffset("resolve_game");
-    const compDefPDA = PublicKey.findProgramAddressSync(
-      [baseSeedCompDefAcc, program.programId.toBuffer(), offset],
-      getArciumProgramId()
-    )[0];
-    console.log("Resolve Game CompDef PDA:", compDefPDA.toBase58());
-
-    const arciumProgram = getArciumProgram(provider);
-    const compDefAccount =
-      await arciumProgram.account.computationDefinitionAccount.fetchNullable(
-        compDefPDA
-      );
-    if (compDefAccount !== null) {
-      console.log("Resolve Game CompDef already initialized.");
-      return "Already Initialized";
+  async function initCompDef(circuit: Circuit): Promise<string> {
+    const compDefPDA = compDefPda(circuit);
+    if (await arciumAccounts.computationDefinitionAccount.fetchNullable(compDefPDA)) {
+      return "already initialized";
     }
-
     const mxeAccount = getMXEAccAddress(program.programId);
-    const mxeAcc = await arciumProgram.account.mxeAccount.fetch(mxeAccount);
-    const lutAddress = getLookupTableAddress(
-      program.programId,
-      mxeAcc.lutOffsetSlot
-    );
+    const mxeAcc = await arciumAccounts.mxeAccount.fetch(mxeAccount);
+    const accounts = {
+      compDefAccount: compDefPDA,
+      payer: owner.publicKey,
+      mxeAccount,
+      addressLookupTable: getLookupTableAddress(program.programId, mxeAcc.lutOffsetSlot),
+    };
+    const url = circuitBaseUrl ? `${circuitBaseUrl}/${circuit}.arcis` : null;
+    const init = {
+      deal: () => program.methods.initDealCompDef(url),
+      reveal_board: () => program.methods.initRevealBoardCompDef(url),
+      showdown_reveal: () => program.methods.initShowdownRevealCompDef(url),
+    }[circuit];
+    const sig = await init().accounts(accounts).signers([owner]).rpc({ commitment: "confirmed" });
 
-    const sig = await program.methods
-      .initResolveGameCompDef()
-      .accounts({
-        compDefAccount: compDefPDA,
-        payer: owner.publicKey,
-        mxeAccount,
-        addressLookupTable: lutAddress,
-      })
-      .rpc({
+    if (!url) {
+      await uploadCircuit(provider, circuit, program.programId, fs.readFileSync(`build/${circuit}.arcis`), true, 500, {
         skipPreflight: true,
+        preflightCommitment: "confirmed",
         commitment: "confirmed",
       });
-
-    const rawCircuit = fs.readFileSync("build/resolve_game.arcis");
-    await uploadCircuit(
-      provider as anchor.AnchorProvider,
-      "resolve_game",
-      program.programId,
-      rawCircuit,
-      true
-    );
-
-    return sig;
+    }
+    return url ? `${sig} (off-chain: ${url})` : sig;
   }
 });
 
@@ -922,23 +414,13 @@ async function getMXEPublicKeyWithRetry(
     } catch (error) {
       console.log(`Attempt ${attempt} failed to fetch MXE public key:`, error);
     }
-
     if (attempt < maxRetries) {
-      console.log(
-        `Retrying in ${retryDelayMs}ms... (attempt ${attempt}/${maxRetries})`
-      );
       await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
     }
   }
-
-  throw new Error(
-    `Failed to fetch MXE public key after ${maxRetries} attempts`
-  );
+  throw new Error(`Failed to fetch MXE public key after ${maxRetries} attempts`);
 }
 
 function readKpJson(path: string): anchor.web3.Keypair {
-  const file = fs.readFileSync(path);
-  return anchor.web3.Keypair.fromSecretKey(
-    new Uint8Array(JSON.parse(file.toString()))
-  );
+  return anchor.web3.Keypair.fromSecretKey(new Uint8Array(JSON.parse(fs.readFileSync(path).toString())));
 }

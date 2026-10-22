@@ -1,0 +1,10 @@
+savePrefix: ''
+minimumReleaseAge: 10080
+trustPolicy: no-downgrade
+blockExoticSubdeps: true
+strictDepBuilds: true
+# Optional native addons for ws; the JS fallbacks are used instead.
+allowBuilds:
+  bufferutil: false
+  utf-8-validate: false
+verifyDepsBeforeRun: error
